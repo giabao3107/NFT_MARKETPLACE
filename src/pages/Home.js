@@ -25,7 +25,7 @@ export default function Home() {
   }, []);
 
   async function loadNFTs() {
-    const provider = new ethers.providers.JsonRpcProvider('http://localhost:8545');
+    const provider = new ethers.providers.JsonRpcProvider('http://127.0.0.1:8545');
     const tokenContract = new ethers.Contract(nftaddress, NFT.abi, provider);
     const marketContract = new ethers.Contract(nftmarketaddress, Market.abi, provider);
     const data = await marketContract.fetchMarketItems();

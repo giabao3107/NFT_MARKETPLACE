@@ -65,58 +65,109 @@ export default function CreatedNFTs() {
 
     try {
       setLoadingState('loading');
+      console.log('Starting to load Created NFTs...');
+      
+      // Add timeout for the entire operation
+      const timeout = setTimeout(() => {
+        console.log('Loading timeout reached');
+        setLoadingState('loaded');
+        setNfts([]);
+        toast.error('Loading timed out. Please try again.');
+      }, 15000); // 15 second timeout
+
       await window.ethereum.request({ method: 'eth_requestAccounts' });
       const provider = new ethers.providers.Web3Provider(window.ethereum);
       const signer = provider.getSigner();
+      
+      console.log('Connected to wallet, fetching data...');
 
       const marketContract = new ethers.Contract(nftmarketaddress, Market.abi, signer);
       const tokenContract = new ethers.Contract(nftaddress, NFT.abi, provider);
       
+      console.log('Calling fetchItemsCreated...');
       const data = await marketContract.fetchItemsCreated();
+      console.log('fetchItemsCreated returned:', data);
+      
+      clearTimeout(timeout); // Clear timeout if successful
 
-      const items = await Promise.all(data.map(async i => {
-        const tokenUri = await tokenContract.tokenURI(i.tokenId);
+      if (!data || data.length === 0) {
+        console.log('No created NFTs found for this address');
+        setNfts([]);
+        setLoadingState('loaded');
+        return;
+      }
+
+      console.log(`Processing ${data.length} created NFTs...`);
+      const items = await Promise.all(data.map(async (i, index) => {
+        console.log(`Processing created NFT ${index + 1}/${data.length}, tokenId: ${i.tokenId}`);
         
-        let meta = {
-          name: `NFT #${i.tokenId}`,
-          description: 'NFT created on marketplace',
-          image: 'https://via.placeholder.com/400x400?text=NFT+' + i.tokenId
-        };
-
-        // Try to fetch metadata
         try {
-          if (tokenUri.startsWith('data:application/json;base64,')) {
-            const base64Data = tokenUri.replace('data:application/json;base64,', '');
-            const jsonString = decodeURIComponent(escape(atob(base64Data)));
-            meta = JSON.parse(jsonString);
-          } else if (tokenUri.startsWith('http')) {
-            const response = await axios.get(tokenUri);
-            meta = response.data;
-          }
-        } catch (error) {
-          console.log('Could not fetch metadata, using placeholder');
-        }
+          const tokenUri = await tokenContract.tokenURI(i.tokenId);
+          
+          let meta = {
+            name: `NFT #${i.tokenId}`,
+            description: 'NFT created on marketplace',
+            image: 'https://via.placeholder.com/400x400?text=NFT+' + i.tokenId
+          };
 
-        let price = ethers.utils.formatUnits(i.price.toString(), 'ether');
-        let item = {
-          price,
-          tokenId: i.tokenId.toNumber(),
-          seller: i.seller,
-          owner: i.owner,
-          sold: i.sold,
-          image: meta.image,
-          name: meta.name,
-          description: meta.description,
-        };
-        return item;
+          // Try to fetch metadata with timeout
+          try {
+            if (tokenUri.startsWith('data:application/json;base64,')) {
+              const base64Data = tokenUri.replace('data:application/json;base64,', '');
+              const jsonString = decodeURIComponent(escape(atob(base64Data)));
+              meta = JSON.parse(jsonString);
+            } else if (tokenUri.startsWith('http')) {
+              const response = await axios.get(tokenUri, { timeout: 5000 });
+              meta = response.data;
+            }
+            
+            // Process IPFS images
+            if (meta.image && meta.image.startsWith('ipfs://')) {
+              const ipfsHash = meta.image.replace('ipfs://', '');
+              meta.image = `https://ipfs.io/ipfs/${ipfsHash}`;
+            }
+          } catch (metaError) {
+            console.log(`Could not fetch metadata for token ${i.tokenId}:`, metaError.message);
+          }
+
+          let price = ethers.utils.formatUnits(i.price.toString(), 'ether');
+          let item = {
+            price,
+            tokenId: i.tokenId.toNumber(),
+            seller: i.seller,
+            owner: i.owner,
+            sold: i.sold,
+            image: meta.image,
+            name: meta.name,
+            description: meta.description,
+          };
+          
+          console.log(`Processed created NFT ${index + 1}: ${item.name}`);
+          return item;
+        } catch (itemError) {
+          console.error(`Error processing created NFT ${i.tokenId}:`, itemError);
+          return null;
+        }
       }));
       
-      setNfts(items);
+      // Filter out failed items
+      const validItems = items.filter(item => item !== null);
+      console.log(`Successfully processed ${validItems.length} created NFTs`);
+      
+      setNfts(validItems);
       setLoadingState('loaded');
     } catch (error) {
       console.error('Error loading created NFTs:', error);
-      setLoadingState('loaded'); // Set to loaded even if empty
-      setNfts([]); // Empty array for no NFTs
+      setLoadingState('loaded');
+      setNfts([]);
+      
+      if (error.message.includes('network')) {
+        toast.error('Network error. Make sure you\'re connected to the correct network.');
+      } else if (error.message.includes('rejected')) {
+        toast.error('Transaction rejected by user.');
+      } else {
+        toast.error('Error loading created NFTs. Please try again.');
+      }
     }
   }
 

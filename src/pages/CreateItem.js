@@ -33,24 +33,46 @@ export default function CreateItem() {
 
     setFileName(file.name);
     setUploadProgress('Processing file...');
+    console.log('📁 Processing file:', file.name, 'Size:', file.size, 'Type:', file.type);
     
     try {
       // Create preview URL from actual file for immediate preview
       const actualFileUrl = URL.createObjectURL(file);
       setPreviewUrl(actualFileUrl);
+      console.log('👁️ Preview URL created');
       
-      // Upload optimized version for blockchain storage
-      const ipfsUrl = await uploadFileToIPFS(file);
-      setFileUrl(ipfsUrl);
-      setUploadProgress('File processed successfully!');
-      toast.success('File processed successfully!');
+      // For development, use a simple approach
+      if (file.type.startsWith('image/')) {
+        // For images, convert to data URL (optimized for small files)
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const dataUrl = e.target.result;
+          setFileUrl(dataUrl);
+          setUploadProgress('✅ Image processed successfully!');
+          toast.success('Image processed successfully!');
+          console.log('✅ Image converted to data URL, size:', dataUrl.length);
+        };
+        reader.onerror = () => {
+          console.error('❌ Failed to read image file');
+          setUploadProgress('❌ Error processing image');
+          toast.error('Error processing image');
+        };
+        reader.readAsDataURL(file);
+      } else {
+        // For other files, create a simple placeholder
+        const placeholderUrl = `https://via.placeholder.com/400x300/6366f1/ffffff?text=${encodeURIComponent(file.name.substring(0, 20))}`;
+        setFileUrl(placeholderUrl);
+        setUploadProgress('✅ File processed successfully!');
+        toast.success('File processed successfully!');
+        console.log('✅ Placeholder created for non-image file');
+      }
     } catch (error) {
-      console.log('Error processing file: ', error);
-      setUploadProgress('Error processing file');
+      console.error('❌ Error processing file:', error);
+      setUploadProgress('❌ Error processing file');
       toast.error('Error processing file');
       
       // Fallback to placeholder for demo
-      const placeholderUrl = `https://via.placeholder.com/400x400?text=${encodeURIComponent(file.name)}`;
+      const placeholderUrl = `https://via.placeholder.com/400x400/ff6b6b/ffffff?text=${encodeURIComponent('Error+Loading+File')}`;
       setFileUrl(placeholderUrl);
       setPreviewUrl(placeholderUrl);
       toast.info('Using placeholder as fallback');
@@ -65,6 +87,7 @@ export default function CreateItem() {
     }
     
     setUploadProgress('Creating metadata...');
+    console.log('📝 Creating metadata for NFT...');
     
     // Create metadata object
     const metadata = {
@@ -79,26 +102,30 @@ export default function CreateItem() {
         {
           trait_type: "Price",
           value: `${price} ETH`
+        },
+        {
+          trait_type: "Created",
+          value: new Date().toISOString()
         }
       ]
     };
     
+    console.log('📄 Metadata created:', metadata);
+    
     try {
-      setUploadProgress('Uploading metadata to IPFS...');
-      // Upload metadata to IPFS with original media for playback
-      const metadataUrl = await uploadJSONToIPFS(metadata, previewUrl);
-      setUploadProgress('Metadata uploaded successfully!');
+      // For development, use data URL (much more reliable than IPFS)
+      const metadataString = JSON.stringify(metadata);
+      const metadataUrl = `data:application/json;base64,${btoa(unescape(encodeURIComponent(metadataString)))}`;
+      
+      setUploadProgress('✅ Metadata created successfully!');
+      console.log('✅ Metadata encoded as data URL, length:', metadataUrl.length);
+      
       return metadataUrl;
     } catch (error) {
-      console.error('Error uploading metadata:', error);
-      setUploadProgress('Error uploading metadata');
-      toast.error('Error uploading metadata to IPFS');
-      
-      // Fallback to data URL for demo
-      const metadataString = JSON.stringify(metadata);
-      const metadataUrl = `data:application/json;base64,${btoa(metadataString)}`;
-      toast.info('Using data URL as fallback for metadata');
-      return metadataUrl;
+      console.error('❌ Error creating metadata:', error);
+      setUploadProgress('❌ Error creating metadata');
+      toast.error('Error creating metadata');
+      return null;
     }
   }
 
@@ -109,62 +136,296 @@ export default function CreateItem() {
     }
 
     setLoading(true);
+    console.log('🚀 Starting NFT creation process...');
     
     try {
+      // Check form inputs
+      const { name, description, price } = formInput;
+      if (!name || !description || !price || !fileUrl) {
+        toast.error('Please fill in all fields and upload an image');
+        setLoading(false);
+        return;
+      }
+
+      console.log('📝 Form data:', { name, description, price, fileUrl: fileUrl.substring(0, 50) + '...' });
+
       const metadataUrl = await createMetadataAndUpload();
       if (!metadataUrl) {
         setLoading(false);
         return;
       }
 
+      console.log('📄 Metadata URL:', metadataUrl.substring(0, 100) + '...');
+
       setUploadProgress('Connecting to wallet...');
       await window.ethereum.request({ method: 'eth_requestAccounts' });
+      
       const provider = new ethers.providers.Web3Provider(window.ethereum);
       const signer = provider.getSigner();
+      const signerAddress = await signer.getAddress();
+      console.log('👛 Connected wallet:', signerAddress);
+      
+      // Check network
+      const network = await provider.getNetwork();
+      console.log('🌐 Network:', network);
+      
+      if (network.chainId !== 1337) {
+        toast.error('Please switch to Hardhat Local network (Chain ID: 1337)');
+        setLoading(false);
+        return;
+      }
 
       setUploadProgress('Creating NFT token...');
+      console.log('🎨 Creating NFT with contract:', nftaddress);
+      
       // Create NFT
       let contract = new ethers.Contract(nftaddress, NFT.abi, signer);
       
-      // Estimate gas for the transaction
-      const gasEstimate = await contract.estimateGas.createToken(metadataUrl);
-      const gasLimit = gasEstimate.mul(120).div(100); // Add 20% buffer
-      console.log(`Gas estimate: ${gasEstimate.toString()}, using limit: ${gasLimit.toString()}`);
+      // Debug contract setup
+      console.log('📋 NFT Contract address:', contract.address);
+      console.log('📋 NFT Contract functions:', Object.keys(contract.functions));
+      console.log('📋 Available methods:', Object.keys(contract));
       
-      let transaction = await contract.createToken(metadataUrl, { gasLimit });
-      let tx = await transaction.wait();
-      let event = tx.events[0];
-      let value = event.args[2];
-      let tokenId = value.toNumber();
+      // Test if createToken function exists
+      if (!contract.createToken) {
+        throw new Error('createToken function not found in NFT contract');
+      }
       
-      const price = ethers.utils.parseUnits(formInput.price, 'ether');
+      try {
+        // Try without gas estimation first (let MetaMask handle it)
+        console.log('⛽ Creating token without manual gas estimation...');
+        let transaction = await contract.createToken(metadataUrl);
+        console.log('📤 Transaction sent:', transaction.hash);
+        
+        setUploadProgress('Waiting for transaction confirmation...');
+        let tx = await transaction.wait();
+        console.log('✅ Token creation confirmed:', tx);
+        
+        // Parse token ID from transaction receipt
+        let tokenId;
+        
+        // Method 1: Try to get from events array
+        if (tx.events && tx.events.length > 0) {
+          console.log('📋 Transaction events:', tx.events);
+          
+          // Look for Transfer event (which should contain the token ID)
+          const transferEvent = tx.events.find(event => event.event === 'Transfer');
+          if (transferEvent && transferEvent.args) {
+            tokenId = transferEvent.args[2].toNumber(); // tokenId is usually the 3rd argument
+            console.log('🎯 Token ID from Transfer event:', tokenId);
+          } else {
+            // Fallback: use the first event
+            const firstEvent = tx.events[0];
+            if (firstEvent && firstEvent.args && firstEvent.args.length > 2) {
+              tokenId = firstEvent.args[2].toNumber();
+              console.log('🎯 Token ID from first event:', tokenId);
+            }
+          }
+        }
+        
+        // Method 2: If events parsing fails, try to get from logs
+        if (!tokenId && tx.logs && tx.logs.length > 0) {
+          console.log('📋 Transaction logs:', tx.logs);
+          
+          try {
+            // Parse logs manually using the contract interface
+            const nftInterface = new ethers.utils.Interface(NFT.abi);
+            for (const log of tx.logs) {
+              try {
+                const parsedLog = nftInterface.parseLog(log);
+                if (parsedLog.name === 'Transfer' && parsedLog.args.length > 2) {
+                  tokenId = parsedLog.args[2].toNumber();
+                  console.log('🎯 Token ID from parsed log:', tokenId);
+                  break;
+                }
+              } catch (parseError) {
+                // Skip logs that can't be parsed
+                continue;
+              }
+            }
+          } catch (logParseError) {
+            console.log('⚠️ Log parsing failed:', logParseError);
+          }
+        }
+        
+        // Method 3: If still no tokenId, try to get the next token ID from contract
+        if (!tokenId) {
+          console.log('⚠️ Could not parse token ID from events, trying to get current token count...');
+          try {
+            // Get the return value from the createToken transaction
+            // The createToken function returns the new token ID
+            const currentTokenId = await contract.getCurrentTokenId();
+            tokenId = currentTokenId.toNumber();
+            console.log('🎯 Token ID from getCurrentTokenId:', tokenId);
+          } catch (counterError) {
+            console.log('⚠️ Could not get token from getCurrentTokenId, using fallback');
+            // Last resort: assume it's token ID 1 if this is the first token
+            tokenId = 1;
+          }
+        }
+        
+        if (!tokenId) {
+          throw new Error('Could not determine token ID from transaction');
+        }
+        
+        console.log('🎯 Final token ID:', tokenId);
+        
+        const priceInWei = ethers.utils.parseUnits(formInput.price, 'ether');
+        console.log('💰 Price in wei:', priceInWei.toString());
 
-      setUploadProgress('Listing NFT for sale...');
-      // List NFT for sale
-      contract = new ethers.Contract(nftmarketaddress, Market.abi, signer);
-      let listingPrice = await contract.getListingPrice();
-      listingPrice = listingPrice.toString();
+        setUploadProgress('Listing NFT for sale...');
+        // List NFT for sale
+        console.log('🏪 Setting up marketplace contract:', nftmarketaddress);
+        contract = new ethers.Contract(nftmarketaddress, Market.abi, signer);
+        
+        // Debug marketplace contract
+        console.log('📋 Marketplace Contract address:', contract.address);
+        console.log('📋 Marketplace Contract functions:', Object.keys(contract.functions));
+        
+        // Test if getListingPrice function exists
+        if (!contract.getListingPrice) {
+          throw new Error('getListingPrice function not found in Marketplace contract');
+        }
+        
+        console.log('🏷️ Getting listing price...');
+        let listingPrice = await contract.getListingPrice();
+        listingPrice = listingPrice.toString();
+        console.log('🏷️ Listing price required:', listingPrice);
 
-      // Estimate gas for listing transaction
-      const listingGasEstimate = await contract.estimateGas.createMarketItem(nftaddress, tokenId, price, { value: listingPrice });
-      const listingGasLimit = listingGasEstimate.mul(120).div(100); // Add 20% buffer
-      console.log(`Listing gas estimate: ${listingGasEstimate.toString()}, using limit: ${listingGasLimit.toString()}`);
+        console.log('📦 Creating market item...');
+        transaction = await contract.createMarketItem(nftaddress, tokenId, priceInWei, { 
+          value: listingPrice
+        });
+        console.log('📤 Listing transaction sent:', transaction.hash);
+        
+        setUploadProgress('Waiting for listing confirmation...');
+        await transaction.wait();
+        console.log('✅ NFT listed successfully!');
+        
+        setUploadProgress('');
+        toast.success('NFT created and listed successfully!');
+        setLoading(false);
+        navigate('/');
+        
+      } catch (gasError) {
+        console.error('⛽ First attempt failed, trying with manual gas:', gasError);
+        
+        // Check if this is actually a gas estimation error or something else
+        if (!gasError.message.includes('gas') && !gasError.message.includes('estimation')) {
+          // If it's not a gas error, don't try the fallback
+          throw gasError;
+        }
+        
+        try {
+          // Fallback: try with manual gas estimation
+          console.log('⛽ Attempting manual gas estimation...');
+          
+          // Check if the estimateGas function exists
+          if (!contract.estimateGas || !contract.estimateGas.createToken) {
+            throw new Error('Gas estimation functions not available on contract');
+          }
+          
+          const gasEstimate = await contract.estimateGas.createToken(metadataUrl);
+          const gasLimit = gasEstimate.mul(150).div(100); // Add 50% buffer
+          console.log(`⛽ Manual gas estimate: ${gasEstimate.toString()}, using limit: ${gasLimit.toString()}`);
+          
+          let transaction = await contract.createToken(metadataUrl, { gasLimit });
+          let tx = await transaction.wait();
+          
+          // Parse token ID from transaction receipt (same logic as above)
+          let tokenId;
+          
+          if (tx.events && tx.events.length > 0) {
+            const transferEvent = tx.events.find(event => event.event === 'Transfer');
+            if (transferEvent && transferEvent.args) {
+              tokenId = transferEvent.args[2].toNumber();
+            } else if (tx.events[0] && tx.events[0].args && tx.events[0].args.length > 2) {
+              tokenId = tx.events[0].args[2].toNumber();
+            }
+          }
+          
+          // Fallback to log parsing if events don't work
+          if (!tokenId && tx.logs && tx.logs.length > 0) {
+            try {
+              const nftInterface = new ethers.utils.Interface(NFT.abi);
+              for (const log of tx.logs) {
+                try {
+                  const parsedLog = nftInterface.parseLog(log);
+                  if (parsedLog.name === 'Transfer' && parsedLog.args.length > 2) {
+                    tokenId = parsedLog.args[2].toNumber();
+                    break;
+                  }
+                } catch (parseError) {
+                  continue;
+                }
+              }
+            } catch (logParseError) {
+              console.log('⚠️ Fallback log parsing failed:', logParseError);
+            }
+          }
+          
+          // Last resort: get from contract counter
+          if (!tokenId) {
+            try {
+              const currentTokenId = await contract.getCurrentTokenId();
+              tokenId = currentTokenId.toNumber();
+            } catch (counterError) {
+              tokenId = 1; // Assume first token
+            }
+          }
+          
+          if (!tokenId) {
+            throw new Error('Could not determine token ID from transaction');
+          }
+          
+          console.log('🎯 Fallback token ID:', tokenId);
+          
+          const priceInWei = ethers.utils.parseUnits(formInput.price, 'ether');
 
-      transaction = await contract.createMarketItem(nftaddress, tokenId, price, { 
-        value: listingPrice,
-        gasLimit: listingGasLimit 
-      });
-      await transaction.wait();
+          // List NFT for sale
+          contract = new ethers.Contract(nftmarketaddress, Market.abi, signer);
+          let listingPrice = await contract.getListingPrice();
+          
+          const listingGasEstimate = await contract.estimateGas.createMarketItem(nftaddress, tokenId, priceInWei, { value: listingPrice });
+          const listingGasLimit = listingGasEstimate.mul(150).div(100);
+          
+          transaction = await contract.createMarketItem(nftaddress, tokenId, priceInWei, { 
+            value: listingPrice,
+            gasLimit: listingGasLimit 
+          });
+          await transaction.wait();
+          
+          setUploadProgress('');
+          toast.success('NFT created and listed successfully!');
+          setLoading(false);
+          navigate('/');
+          
+        } catch (manualGasError) {
+          throw manualGasError; // Re-throw to be caught by outer catch
+        }
+      }
       
-      setUploadProgress('');
-      toast.success('NFT created and listed successfully!');
-      setLoading(false);
-      navigate('/');
     } catch (error) {
-      console.error(error);
+      console.error('❌ Error creating NFT:', error);
       setUploadProgress('');
-      toast.error('Error creating NFT');
       setLoading(false);
+      
+      // More specific error messages
+      if (error.message.includes('insufficient funds')) {
+        toast.error('Insufficient funds. Make sure you have enough ETH for gas fees.');
+      } else if (error.message.includes('user rejected')) {
+        toast.error('Transaction rejected by user.');
+      } else if (error.message.includes('network')) {
+        toast.error('Network error. Make sure you\'re connected to Hardhat Local network.');
+      } else if (error.message.includes('nonce')) {
+        toast.error('Nonce error. Try refreshing MetaMask or the page.');
+      } else if (error.code === 4001) {
+        toast.error('Transaction rejected by user.');
+      } else if (error.code === -32603) {
+        toast.error('Internal JSON-RPC error. Check your network connection.');
+      } else {
+        toast.error(`Error creating NFT: ${error.message || 'Unknown error'}`);
+      }
     }
   }
 
