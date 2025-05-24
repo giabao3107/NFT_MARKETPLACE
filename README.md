@@ -1,267 +1,250 @@
-# NFT Marketplace
+# 🎨 NFT Marketplace - Sàn Giao Dịch NFT
 
-A decentralized NFT marketplace built with React, Solidity, and MetaMask. This project allows users to create, buy, and sell NFTs on the Ethereum blockchain with a modern, OpenSea-inspired user interface.
+## ✨ Tính Năng Chính
 
-## 🚀 Features
+### 🖼️ Quản Lý NFT Đa Phương Tiện
+- **Hỗ trợ nhiều định dạng**: Images, Videos (MP4, WebM, MOV), Audio (MP3, WAV, M4A)
+- **Preview trong khi tạo**: Xem trước nội dung trước khi mint NFT
+- **Playback thông minh**: Video và audio player tích hợp trong modal chi tiết
 
-- **Create NFTs**: Upload images and metadata to IPFS and mint new NFTs
-- **Buy/Sell NFTs**: Purchase NFTs with ETH through smart contracts
-- **Wallet Integration**: Connect with MetaMask for secure transactions
-- **User Dashboard**: View owned NFTs and created NFTs
-- **Responsive Design**: Modern UI that works on desktop and mobile
-- **IPFS Storage**: Decentralized storage for NFT metadata and images
+### 🛒 Marketplace Hoàn Chỉnh
+- **Local NFTs**: NFT được tạo trên local blockchain (Hardhat)
+- **OpenSea Integration**: Hiển thị NFT trending từ OpenSea
+- **Smart Contract**: Tự động xử lý giao dịch mua bán
+- **Responsive Design**: Tối ưu cho mọi thiết bị
 
-## 🛠 Tech Stack
+### 💎 Tính Năng Nâng Cao
+- **Wallet Integration**: Kết nối MetaMask với hiển thị balance real-time
+- **Gas Optimization**: Tự động estimate và optimize gas fee
+- **IPFS Storage**: Lưu trữ metadata và media phi tập trung
+- **Transaction History**: Theo dõi lịch sử giao dịch
+
+## 🛠️ Tech Stack
 
 ### Frontend
-- **React 18** - Modern React with hooks
-- **React Router** - Client-side routing
-- **Ethers.js** - Ethereum library for blockchain interactions
-- **Web3Modal** - Wallet connection management
-- **Axios** - HTTP client for API requests
+- **React.js** - UI Framework
+- **React Router** - Navigation
+- **CSS3** - Styling với Flexbox và Grid
 - **React Icons** - Icon library
-- **React Toastify** - Toast notifications
-- **Styled Components** - CSS-in-JS styling
 
-### Backend/Blockchain
-- **Solidity** - Smart contract development
-- **Hardhat** - Ethereum development environment
-- **OpenZeppelin** - Secure smart contract library
-- **IPFS** - Decentralized file storage
+### Blockchain
+- **Hardhat** - Development environment
+- **Ethers.js** - Ethereum library
+- **Solidity** - Smart contract language
+- **MetaMask** - Wallet integration
 
-### Smart Contracts
-- **NFT.sol** - ERC721 token contract for NFT creation
-- **NFTMarketplace.sol** - Marketplace contract for buying/selling
+### Storage & APIs
+- **IPFS** - Decentralized storage
+- **OpenSea API** - NFT marketplace data
+- **Local Storage** - Development data
 
-## 📁 Project Structure
+## 🚀 Cài Đặt và Chạy Project
 
-```
-nft-marketplace/
-├── contracts/                 # Solidity smart contracts
-│   ├── NFT.sol               # ERC721 NFT contract
-│   └── NFTMarketplace.sol    # Marketplace contract
-├── scripts/                  # Deployment scripts
-│   └── deploy.js            # Contract deployment script
-├── src/                     # React frontend
-│   ├── components/          # Reusable components
-│   │   ├── Navbar.js       # Navigation component
-│   │   ├── NFTCard.js      # NFT display card
-│   │   └── *.css           # Component styles
-│   ├── pages/              # Page components
-│   │   ├── Home.js         # Marketplace homepage
-│   │   ├── CreateItem.js   # NFT creation page
-│   │   ├── MyNFTs.js       # User's owned NFTs
-│   │   └── CreatedNFTs.js  # User's created NFTs
-│   ├── artifacts/          # Compiled contract artifacts
-│   ├── config.js           # Contract addresses
-│   ├── App.js              # Main app component
-│   └── index.js            # App entry point
-├── public/                 # Static files
-├── hardhat.config.js       # Hardhat configuration
-├── package.json           # Dependencies and scripts
-└── README.md              # Project documentation
+### Yêu Cầu Hệ Thống
+- **Node.js** v16.0.0 trở lên
+- **npm** hoặc **yarn**
+- **MetaMask** browser extension
+- **Git**
+
+### Bước 1: Clone Repository
+```bash
+git clone <repository-url>
+cd Blockchain
 ```
 
-## 🚀 Getting Started
-
-### Prerequisites
-
-- Node.js (v14 or higher)
-- npm or yarn
-- MetaMask browser extension
-- Git
-
-### Installation
-
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/yourusername/nft-marketplace.git
-   cd nft-marketplace
-   ```
-
-2. **Install dependencies**
-   ```bash
-   npm install
-   ```
-
-3. **Set up IPFS (Optional - for local development)**
-   - Sign up for [Infura IPFS](https://infura.io/product/ipfs)
-   - Get your project ID and secret
-   - Update the IPFS client configuration in `src/pages/CreateItem.js`
-
-### 🔧 Development Setup
-
-1. **Start local Hardhat network**
-   ```bash
-   npx hardhat node
-   ```
-   This will start a local Ethereum network on `http://localhost:8545`
-
-2. **Deploy smart contracts**
-   ```bash
-   npm run deploy
-   ```
-   This will deploy the contracts and output their addresses.
-
-3. **Update contract addresses**
-   Copy the deployed contract addresses and update `src/config.js`:
-   ```javascript
-   export const nftaddress = "YOUR_NFT_CONTRACT_ADDRESS";
-   export const nftmarketaddress = "YOUR_MARKETPLACE_CONTRACT_ADDRESS";
-   ```
-
-4. **Start the React development server**
-   ```bash
-   npm start
-   ```
-   The app will open at `http://localhost:3000`
-
-5. **Configure MetaMask**
-   - Add the local Hardhat network to MetaMask:
-     - Network Name: Hardhat Local
-     - RPC URL: http://localhost:8545
-     - Chain ID: 1337
-     - Currency Symbol: ETH
-   - Import one of the test accounts from Hardhat node output
-
-## 📱 Usage
-
-### For Users
-
-1. **Connect Wallet**
-   - Click "Connect Wallet" in the navigation
-   - Approve the connection in MetaMask
-
-2. **Browse NFTs**
-   - Visit the homepage to see all available NFTs
-   - Click on any NFT to view details
-
-3. **Buy NFTs**
-   - Click "Buy Now" on any NFT
-   - Confirm the transaction in MetaMask
-   - Pay the listing price + gas fees
-
-4. **Create NFTs**
-   - Go to "Create" page
-   - Upload an image file
-   - Add name, description, and price
-   - Click "Create NFT" and confirm transactions
-
-5. **View Your NFTs**
-   - "My NFTs" - View NFTs you own
-   - "Created" - View NFTs you've created
-
-### For Developers
-
-1. **Compile contracts**
-   ```bash
-   npm run compile
-   ```
-
-2. **Run tests**
-   ```bash
-   npx hardhat test
-   ```
-
-3. **Deploy to testnet**
-   - Update `hardhat.config.js` with testnet configuration
-   - Add your private key and Infura/Alchemy URL
-   - Run deployment script
-
-## 🔐 Smart Contract Details
-
-### NFT.sol
-- **Standard**: ERC721 with URI Storage
-- **Features**: 
-  - Mint new tokens with metadata URI
-  - Automatic approval for marketplace contract
-  - Token counter for unique IDs
-
-### NFTMarketplace.sol
-- **Features**:
-  - List NFTs for sale with custom pricing
-  - Buy NFTs with ETH payments
-  - Marketplace fee (0.025 ETH listing fee)
-  - Fetch user's owned/created NFTs
-  - Reentrancy protection
-
-## 🎨 UI/UX Features
-
-- **OpenSea-inspired Design**: Clean, modern interface
-- **Responsive Layout**: Works on desktop, tablet, and mobile
-- **Hover Effects**: Interactive card animations
-- **Loading States**: User feedback during transactions
-- **Toast Notifications**: Success/error messages
-- **Wallet Integration**: Seamless MetaMask connection
-
-## 🔧 Configuration
-
-### Environment Variables (Optional)
-Create a `.env` file for production deployment:
-```
-REACT_APP_INFURA_PROJECT_ID=your_infura_project_id
-REACT_APP_INFURA_PROJECT_SECRET=your_infura_secret
-PRIVATE_KEY=your_wallet_private_key
-INFURA_URL=your_infura_ethereum_url
+### Bước 2: Cài Đặt Dependencies
+```bash
+npm install
 ```
 
-### Network Configuration
-Update `hardhat.config.js` for different networks:
+### Bước 3: Compile Smart Contracts
+```bash
+npx hardhat compile
+```
+
+### Bước 4: Khởi Động Local Blockchain
+```bash
+# Terminal 1 - Chạy Hardhat node
+npx hardhat node
+```
+
+### Bước 5: Deploy Smart Contracts
+```bash
+# Terminal 2 - Deploy contracts
+npx hardhat run scripts/deploy.js --network localhost
+```
+
+### Bước 6: Khởi Động Frontend
+```bash
+# Terminal 3 - Chạy React app
+npm start
+```
+
+### Bước 7: Cấu Hình MetaMask
+1. Mở MetaMask extension
+2. Thêm network mới:
+   - **Network Name**: Hardhat Local
+   - **RPC URL**: http://localhost:8545
+   - **Chain ID**: 1337
+   - **Currency Symbol**: ETH
+3. Import test account:
+   - **Private Key**: `0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80`
+   - **Address**: `0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266`
+   - **Balance**: 10,000 ETH
+
+## 📱 Hướng Dẫn Sử Dụng
+
+### Tạo NFT Mới
+1. Nhấn **"Create"** trên navbar
+2. Upload file (image/video/audio)
+3. Điền thông tin: Name, Description, Price
+4. Nhấn **"Create NFT"**
+5. Confirm transaction trong MetaMask
+
+### Mua NFT
+1. Browse NFTs trên homepage
+2. Click vào NFT để xem chi tiết
+3. Nhấn **"Buy NFT"** (local) hoặc **"Buy on OpenSea"**
+4. Confirm transaction
+
+### Quản Lý NFT
+- **My NFTs**: Xem NFT đã mua
+- **Created NFTs**: Xem NFT đã tạo
+- **Wallet Info**: Hiển thị balance và address
+
+## 📁 Cấu Trúc Project
+
+```
+src/
+├── components/           # React components
+│   ├── Navbar.js        # Navigation bar với wallet info
+│   ├── NFTCard.js       # Card hiển thị NFT
+│   └── NFTDetailsModal.js # Modal chi tiết NFT
+├── pages/               # Các trang chính
+│   ├── Home.js          # Trang chủ marketplace
+│   ├── CreateItem.js    # Trang tạo NFT
+│   ├── MyNFTs.js        # NFT đã mua
+│   └── CreatedNFTs.js   # NFT đã tạo
+├── utils/               # Utility functions
+│   ├── ipfs-alternatives.js # IPFS storage
+│   └── opensea-api.js   # OpenSea integration
+├── artifacts/           # Compiled contracts
+└── contracts/           # Smart contracts
+    ├── NFT.sol          # ERC721 NFT contract
+    └── NFTMarketplace.sol # Marketplace contract
+```
+
+## 🔧 Cấu Hình
+
+### Contract Addresses (Local)
 ```javascript
-networks: {
-  goerli: {
-    url: process.env.INFURA_URL,
-    accounts: [process.env.PRIVATE_KEY]
-  }
-}
+// src/config.js
+export const nftaddress = "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512"
+export const nftmarketaddress = "0x5FbDB2315678afecb367f032d93F642f64180aa3"
 ```
 
-## 📝 Available Scripts
+### OpenSea API
+```javascript
+// src/utils/opensea-api.js
+const OPENSEA_API_KEY = 'your-api-key-here'
+```
 
-- `npm start` - Start development server
-- `npm run build` - Build for production
-- `npm test` - Run tests
-- `npm run compile` - Compile smart contracts
-- `npm run deploy` - Deploy contracts to local network
-- `npm run node` - Start local Hardhat network
+## 🎯 Tính Năng Đặc Biệt
+
+### Dual Storage System
+- **Blockchain**: Lưu SVG placeholder (tiết kiệm gas)
+- **Local**: Lưu media gốc cho playback
+- **Smart Detection**: Tự động phát hiện loại media
+
+### Media Optimization
+- **Images**: Auto resize > 1MB
+- **Videos**: SVG placeholder với video icon
+- **Audio**: SVG placeholder với audio waves
+
+### Gas Optimization
+- Auto estimate gas limit
+- 20% buffer cho safety
+- Optimized metadata size
+
+## 🛡️ Security Features
+
+- **Smart Contract Security**: Tested contracts
+- **Wallet Integration**: Secure MetaMask connection
+- **Input Validation**: Frontend và contract validation
+- **Error Handling**: Comprehensive error management
+
+## 🧪 Testing
+
+### Chạy Tests
+```bash
+# Smart contract tests
+npx hardhat test
+
+# Frontend tests (nếu có)
+npm test
+```
+
+### Test Accounts
+```
+Account #0: 0xf39F...2266 (10000 ETH)
+Account #1: 0x70997...3045 (10000 ETH)
+Account #2: 0x3C44C...7b47 (10000 ETH)
+```
 
 ## 🚀 Deployment
 
-### Frontend Deployment
-1. Build the project: `npm run build`
-2. Deploy to platforms like Vercel, Netlify, or IPFS
+### Deploy lên Testnet
+```bash
+# Cấu hình network trong hardhat.config.js
+npx hardhat run scripts/deploy.js --network goerli
+```
 
-### Smart Contract Deployment
-1. Configure network in `hardhat.config.js`
-2. Run: `npx hardhat run scripts/deploy.js --network <network-name>`
-3. Update contract addresses in `src/config.js`
+### Deploy lên Mainnet
+```bash
+# Cẩn thận với mainnet!
+npx hardhat run scripts/deploy.js --network mainnet
+```
 
 ## 🤝 Contributing
 
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feature-name`
-3. Commit changes: `git commit -am 'Add feature'`
-4. Push to branch: `git push origin feature-name`
-5. Submit a pull request
+1. Fork repository
+2. Tạo feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to branch (`git push origin feature/AmazingFeature`)
+5. Tạo Pull Request
+
+## 📝 Changelog
+
+### v1.0.0 (Latest)
+- ✅ Complete NFT marketplace
+- ✅ Multi-media support (image/video/audio)
+- ✅ OpenSea integration
+- ✅ Wallet integration với real-time balance
+- ✅ Gas optimization
+- ✅ Responsive design
+
+## 🐛 Known Issues
+
+- Video playback chỉ hỗ trợ trên NFT mới tạo
+- OpenSea API có rate limit
+- IPFS loading có thể chậm
+
+## 🏆 Credits
+
+**Created By Group 6 - Class 243BFF400602**
+
+### Team Members
+- Frontend Development
+- Smart Contract Development  
+- UI/UX Design
+- Testing & QA
+
+### Special Thanks
+- OpenSea API
+- MetaMask team
+- Hardhat framework
+- React community
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 🙏 Acknowledgments
-
-- OpenZeppelin for secure smart contract libraries
-- Hardhat for the excellent development environment
-- React team for the amazing frontend framework
-- IPFS for decentralized storage solution
-
-## 📞 Support
-
-If you have any questions or need help, please:
-- Open an issue on GitHub
-- Check the documentation
-- Join our community discussions
-
----
-
-**Happy Building! 🚀** 
+MIT License - xem [LICENSE](LICENSE) file để biết thêm chi tiết.

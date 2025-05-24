@@ -339,4 +339,184 @@
 
 .nft-modal-container::-webkit-scrollbar-thumb:hover {
   background: #a8a8a8;
+}
+
+.nft-modal-media {
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+  max-height: 400px;
+  object-fit: cover;
+  border-radius: 12px;
+}
+
+/* Audio NFT styles */
+.nft-modal-audio {
+  width: 100%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 12px;
+  padding: 2rem;
+  text-align: center;
+  color: white;
+}
+
+.audio-visual {
+  margin-bottom: 1.5rem;
+}
+
+.audio-icon-large {
+  font-size: 4rem;
+  margin-bottom: 1rem;
+  opacity: 0.9;
+}
+
+.audio-visual h3 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.5rem;
+}
+
+.audio-visual p {
+  margin: 0;
+  font-size: 1rem;
+  opacity: 0.8;
+}
+
+.audio-controls {
+  width: 100%;
+  margin-top: 1rem;
+}
+
+/* Enhanced price display */
+.price-value {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #333;
+}
+
+.price-value .eth-icon {
+  color: #627eea;
+  font-size: 1.3rem;
+}
+
+/* Local NFT button */
+.buy-local-button {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  padding: 1rem 2rem;
+  border-radius: 12px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  width: 100%;
+  margin-bottom: 1rem;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.buy-local-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+}
+
+/* Enhanced OpenSea buttons */
+.buy-opensea-button {
+  background: linear-gradient(135deg, #2081e2 0%, #1868c7 100%);
+  color: white;
+  border: none;
+  padding: 1rem 2rem;
+  border-radius: 12px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  width: 100%;
+  margin-bottom: 1rem;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.buy-opensea-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(32, 129, 226, 0.4);
+}
+
+.view-opensea-button {
+  background: transparent;
+  color: #2081e2;
+  border: 2px solid #2081e2;
+  padding: 0.8rem 2rem;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  width: 100%;
+  transition: all 0.3s ease;
+}
+
+.view-opensea-button:hover {
+  background: #2081e2;
+  color: white;
+  transform: translateY(-1px);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .nft-modal-audio {
+    padding: 1.5rem;
+  }
+  
+  .audio-icon-large {
+    font-size: 3rem;
+  }
+  
+  .price-value {
+    font-size: 1.3rem;
+  }
+  
+  .buy-local-button,
+  .buy-opensea-button {
+    padding: 0.8rem 1.5rem;
+    font-size: 1rem;
+  }
+}
+
+/* Media player styling */
+.media-player {
+  position: relative;
+  width: 100%;
+}
+
+.media-player video {
+  background: #000;
+  border-radius: 8px;
+}
+
+.media-player audio {
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 10px;
+  border: 1px solid #e9ecef;
+}
+
+.media-player audio::-webkit-media-controls-panel {
+  background-color: #6366f1;
+}
+
+/* Enhanced modal media styling */
+.modal-media {
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.modal-media:hover {
+  transform: scale(1.02);
 } 

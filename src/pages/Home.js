@@ -25,13 +25,14 @@ export default function Home() {
   }, []);
 
   async function loadNFTs() {
-    const provider = new ethers.providers.JsonRpcProvider();
+    const provider = new ethers.providers.JsonRpcProvider('http://localhost:8545');
     const tokenContract = new ethers.Contract(nftaddress, NFT.abi, provider);
     const marketContract = new ethers.Contract(nftmarketaddress, Market.abi, provider);
     const data = await marketContract.fetchMarketItems();
 
     const items = await Promise.all(data.map(async i => {
       const tokenUri = await tokenContract.tokenURI(i.tokenId);
+      console.log(`Token ${i.tokenId} URI:`, tokenUri);
       
       // Default placeholder metadata
       const defaultMeta = {
@@ -45,9 +46,33 @@ export default function Home() {
       // Try to fetch metadata from different sources
       try {
         if (tokenUri.startsWith('https://ipfs.io/ipfs/') || tokenUri.startsWith('ipfs://')) {
-          // IPFS URL - fetch directly
-          const response = await axios.get(tokenUri);
-          meta.data = response.data;
+          // IPFS URL - try multiple gateways
+          let ipfsHash;
+          if (tokenUri.startsWith('ipfs://')) {
+            ipfsHash = tokenUri.replace('ipfs://', '');
+          } else {
+            ipfsHash = tokenUri.replace('https://ipfs.io/ipfs/', '');
+          }
+          
+          // Try multiple IPFS gateways
+          const gateways = [
+            `https://ipfs.io/ipfs/${ipfsHash}`,
+            `https://gateway.pinata.cloud/ipfs/${ipfsHash}`,
+            `https://cloudflare-ipfs.com/ipfs/${ipfsHash}`
+          ];
+          
+          for (const gateway of gateways) {
+            try {
+              console.log(`Trying IPFS gateway: ${gateway}`);
+              const response = await axios.get(gateway, { timeout: 5000 });
+              meta.data = response.data;
+              console.log(`Successfully loaded metadata from: ${gateway}`);
+              break;
+            } catch (gatewayError) {
+              console.log(`Gateway failed: ${gateway}`, gatewayError.message);
+              continue;
+            }
+          }
         } else if (tokenUri.startsWith('data:application/json;base64,')) {
           // Base64 encoded JSON data URL (Unicode-safe decoding)
           const base64Data = tokenUri.replace('data:application/json;base64,', '');
@@ -62,6 +87,17 @@ export default function Home() {
           const response = await axios.get(tokenUri);
           meta.data = response.data;
         }
+        
+        // Process the image URL to handle IPFS
+        if (meta.data.image) {
+          if (meta.data.image.startsWith('ipfs://')) {
+            const ipfsHash = meta.data.image.replace('ipfs://', '');
+            meta.data.image = `https://ipfs.io/ipfs/${ipfsHash}`;
+            console.log(`Converted IPFS image URL: ${meta.data.image}`);
+          }
+        }
+        
+        console.log(`Token ${i.tokenId} metadata:`, meta.data);
       } catch (error) {
         console.log('Could not fetch metadata, using placeholder:', error);
         // Keep default placeholder metadata
@@ -77,6 +113,7 @@ export default function Home() {
         name: meta.data.name,
         description: meta.data.description,
       };
+      console.log(`Token ${i.tokenId} final item:`, item);
       return item;
     }));
     setNfts(items);
@@ -155,6 +192,7 @@ export default function Home() {
                 key={i}
                 nft={nft}
                 onBuy={() => buyNft(nft)}
+                onView={handleViewNft}
                 showBuyButton={true}
               />
             ))}
@@ -195,6 +233,7 @@ export default function Home() {
         nft={selectedNft}
         isOpen={modalOpen}
         onClose={closeModal}
+        onBuy={buyNft}
         onBuyOnOpenSea={handleBuyOnOpenSea}
       />
     </div>

@@ -22,6 +22,11 @@ function App() {
           <Route path="/created-nfts" element={<CreatedNFTs />} />
         </Routes>
         <ToastContainer position="top-right" autoClose={5000} />
+        
+        {/* Footer */}
+        <footer className="app-footer">
+          <p>Created By Group 6 - Class 243BFF400602</p>
+        </footer>
       </div>
     </Router>
   );

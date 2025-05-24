@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ethers } from 'ethers';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
@@ -12,33 +12,48 @@ import './CreateItem.css';
 export default function CreateItem() {
   const [fileUrl, setFileUrl] = useState(null);
   const [fileName, setFileName] = useState('');
+  const [previewUrl, setPreviewUrl] = useState(null); // For actual file preview
   const [formInput, updateFormInput] = useState({ price: '', name: '', description: '' });
   const [loading, setLoading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState('');
   const navigate = useNavigate();
+
+  // Cleanup object URLs when component unmounts
+  useEffect(() => {
+    return () => {
+      if (previewUrl && previewUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(previewUrl);
+      }
+    };
+  }, [previewUrl]);
 
   async function onChange(e) {
     const file = e.target.files[0];
     if (!file) return;
 
     setFileName(file.name);
-    setUploadProgress('Uploading file to IPFS...');
+    setUploadProgress('Processing file...');
     
     try {
-      // Upload file to IPFS using Infura
+      // Create preview URL from actual file for immediate preview
+      const actualFileUrl = URL.createObjectURL(file);
+      setPreviewUrl(actualFileUrl);
+      
+      // Upload optimized version for blockchain storage
       const ipfsUrl = await uploadFileToIPFS(file);
       setFileUrl(ipfsUrl);
-      setUploadProgress('File uploaded successfully!');
-      toast.success('File uploaded to IPFS successfully!');
+      setUploadProgress('File processed successfully!');
+      toast.success('File processed successfully!');
     } catch (error) {
-      console.log('Error uploading file: ', error);
-      setUploadProgress('Error uploading file');
-      toast.error('Error uploading file to IPFS');
+      console.log('Error processing file: ', error);
+      setUploadProgress('Error processing file');
+      toast.error('Error processing file');
       
       // Fallback to placeholder for demo
       const placeholderUrl = `https://via.placeholder.com/400x400?text=${encodeURIComponent(file.name)}`;
       setFileUrl(placeholderUrl);
-      toast.info('Using placeholder image as fallback');
+      setPreviewUrl(placeholderUrl);
+      toast.info('Using placeholder as fallback');
     }
   }
 
@@ -70,8 +85,8 @@ export default function CreateItem() {
     
     try {
       setUploadProgress('Uploading metadata to IPFS...');
-      // Upload metadata to IPFS
-      const metadataUrl = await uploadJSONToIPFS(metadata);
+      // Upload metadata to IPFS with original media for playback
+      const metadataUrl = await uploadJSONToIPFS(metadata, previewUrl);
       setUploadProgress('Metadata uploaded successfully!');
       return metadataUrl;
     } catch (error) {
@@ -110,7 +125,13 @@ export default function CreateItem() {
       setUploadProgress('Creating NFT token...');
       // Create NFT
       let contract = new ethers.Contract(nftaddress, NFT.abi, signer);
-      let transaction = await contract.createToken(metadataUrl);
+      
+      // Estimate gas for the transaction
+      const gasEstimate = await contract.estimateGas.createToken(metadataUrl);
+      const gasLimit = gasEstimate.mul(120).div(100); // Add 20% buffer
+      console.log(`Gas estimate: ${gasEstimate.toString()}, using limit: ${gasLimit.toString()}`);
+      
+      let transaction = await contract.createToken(metadataUrl, { gasLimit });
       let tx = await transaction.wait();
       let event = tx.events[0];
       let value = event.args[2];
@@ -124,7 +145,15 @@ export default function CreateItem() {
       let listingPrice = await contract.getListingPrice();
       listingPrice = listingPrice.toString();
 
-      transaction = await contract.createMarketItem(nftaddress, tokenId, price, { value: listingPrice });
+      // Estimate gas for listing transaction
+      const listingGasEstimate = await contract.estimateGas.createMarketItem(nftaddress, tokenId, price, { value: listingPrice });
+      const listingGasLimit = listingGasEstimate.mul(120).div(100); // Add 20% buffer
+      console.log(`Listing gas estimate: ${listingGasEstimate.toString()}, using limit: ${listingGasLimit.toString()}`);
+
+      transaction = await contract.createMarketItem(nftaddress, tokenId, price, { 
+        value: listingPrice,
+        gasLimit: listingGasLimit 
+      });
       await transaction.wait();
       
       setUploadProgress('');
@@ -164,10 +193,54 @@ export default function CreateItem() {
             </div>
           )}
           
-          {fileUrl && (
+          {previewUrl && (
             <div className="preview">
-              <img src={fileUrl} alt="Preview" className="preview-image" />
-              <p>✅ File uploaded to IPFS successfully!</p>
+              {fileName.toLowerCase().match(/\.(mp4|webm|ogg|mov|avi)$/i) ? (
+                <video 
+                  src={previewUrl} 
+                  className="preview-media"
+                  controls
+                  preload="metadata"
+                  style={{ maxWidth: '300px', maxHeight: '200px' }}
+                  onError={(e) => {
+                    console.log('❌ Preview video failed to load:', previewUrl);
+                  }}
+                  onLoadedData={() => {
+                    console.log('✅ Preview video loaded:', previewUrl);
+                  }}
+                />
+              ) : fileName.toLowerCase().match(/\.(mp3|wav|ogg|m4a|aac)$/i) ? (
+                <div className="audio-preview">
+                  <div className="audio-placeholder">
+                    🎵 Audio File
+                    <p>{fileName}</p>
+                  </div>
+                  <audio 
+                    src={previewUrl} 
+                    controls
+                    preload="metadata"
+                    style={{ width: '100%', marginTop: '10px' }}
+                    onError={(e) => {
+                      console.log('❌ Preview audio failed to load:', previewUrl);
+                    }}
+                    onLoadedData={() => {
+                      console.log('✅ Preview audio loaded:', previewUrl);
+                    }}
+                  />
+                </div>
+              ) : (
+                <img 
+                  src={previewUrl} 
+                  alt="Preview" 
+                  className="preview-media"
+                  style={{ maxWidth: '300px', maxHeight: '200px' }}
+                  onError={(e) => {
+                    e.target.style.display = 'none';
+                    e.target.nextSibling.style.display = 'block';
+                  }}
+                />
+              )}
+              <p>✅ File processed successfully!</p>
             </div>
           )}
         </div>
@@ -208,8 +281,6 @@ export default function CreateItem() {
         >
           {loading ? 'Creating...' : 'Create NFT'}
         </button>
-        
-                <div style={{ marginTop: '20px', padding: '10px', backgroundColor: '#d1ecf1', borderRadius: '8px', border: '1px solid #17a2b8' }}>          <small>            <strong>⚡ Blockchain-Optimized:</strong> Files are processed into efficient placeholders for on-chain storage.             This avoids expensive transactions while maintaining full NFT functionality.             Metadata is optimized for gas efficiency and permanence.          </small>        </div>
       </div>
     </div>
   );

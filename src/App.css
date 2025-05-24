@@ -73,4 +73,21 @@ body {
 
 .empty-state p {
   font-size: 16px;
+}
+
+/* Footer styles */
+.app-footer {
+  margin-top: 40px;
+  padding: 20px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  text-align: center;
+  border-top: 1px solid #e5e8eb;
+}
+
+.app-footer p {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
 } 

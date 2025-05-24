@@ -4,6 +4,7 @@ import axios from 'axios';
 import { toast } from 'react-toastify';
 
 import NFTCard from '../components/NFTCard';
+import NFTDetailsModal from '../components/NFTDetailsModal';
 import { nftaddress, nftmarketaddress } from '../config';
 import NFT from '../artifacts/contracts/NFT.sol/NFT.json';
 import Market from '../artifacts/contracts/NFTMarketplace.sol/NFTMarketplace.json';
@@ -13,6 +14,8 @@ export default function MyNFTs() {
   const [nfts, setNfts] = useState([]);
   const [loadingState, setLoadingState] = useState('not-loaded');
   const [account, setAccount] = useState('');
+  const [selectedNft, setSelectedNft] = useState(null);
+  const [modalOpen, setModalOpen] = useState(false);
 
   useEffect(() => {
     checkConnection();
@@ -116,6 +119,16 @@ export default function MyNFTs() {
     }
   }
 
+  const handleViewNft = (nft) => {
+    setSelectedNft(nft);
+    setModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setModalOpen(false);
+    setSelectedNft(null);
+  };
+
   if (loadingState === 'no-metamask') {
     return (
       <div className="my-nfts-container">
@@ -176,10 +189,18 @@ export default function MyNFTs() {
           <NFTCard
             key={i}
             nft={nft}
+            onView={handleViewNft}
             showBuyButton={false}
           />
         ))}
       </div>
+      
+      {/* NFT Details Modal */}
+      <NFTDetailsModal
+        nft={selectedNft}
+        isOpen={modalOpen}
+        onClose={closeModal}
+      />
     </div>
   );
 } 
