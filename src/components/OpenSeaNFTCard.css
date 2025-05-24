@@ -1,0 +1,259 @@
+.opensea-nft-card {
+  background: linear-gradient(145deg, #ffffff, #f8f9fa);
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease;
+  cursor: pointer;
+  border: 2px solid transparent;
+  position: relative;
+}
+
+.opensea-nft-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+  border-color: #2081e2;
+}
+
+.opensea-nft-image-container {
+  position: relative;
+  width: 100%;
+  height: 280px;
+  overflow: hidden;
+  background: #f0f0f0;
+}
+
+.opensea-nft-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease, opacity 0.3s ease;
+}
+
+.opensea-nft-image.loaded {
+  opacity: 1;
+}
+
+.opensea-nft-card:hover .opensea-nft-image {
+  transform: scale(1.05);
+}
+
+.image-loading-placeholder {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(45deg, #f0f0f0 25%, transparent 25%, transparent 75%, #f0f0f0 75%, #f0f0f0), 
+              linear-gradient(45deg, #f0f0f0 25%, transparent 25%, transparent 75%, #f0f0f0 75%, #f0f0f0);
+  background-size: 20px 20px;
+  background-position: 0 0, 10px 10px;
+  animation: shimmer 2s infinite linear;
+}
+
+.image-loading-placeholder span {
+  background: rgba(255, 255, 255, 0.9);
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #666;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 0 0, 10px 10px;
+  }
+  100% {
+    background-position: 20px 20px, 30px 30px;
+  }
+}
+
+.opensea-badge {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: linear-gradient(135deg, #2081e2, #1868b7);
+  color: white;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(32, 129, 226, 0.3);
+}
+
+.opensea-nft-details {
+  padding: 20px;
+}
+
+.opensea-nft-header {
+  margin-bottom: 12px;
+}
+
+.opensea-nft-name {
+  font-size: 18px;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin: 0 0 4px 0;
+  line-height: 1.3;
+}
+
+.opensea-nft-collection {
+  font-size: 14px;
+  color: #2081e2;
+  margin: 0;
+  font-weight: 600;
+}
+
+.opensea-nft-description {
+  font-size: 14px;
+  color: #666;
+  line-height: 1.4;
+  margin: 0 0 16px 0;
+}
+
+.opensea-nft-info {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 16px;
+  padding: 12px;
+  background: #f8f9fa;
+  border-radius: 8px;
+}
+
+.opensea-price-section,
+.opensea-owner-section {
+  text-align: center;
+}
+
+.opensea-price-label,
+.opensea-owner-label {
+  display: block;
+  font-size: 12px;
+  color: #666;
+  font-weight: 600;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.opensea-price {
+  font-size: 16px;
+  font-weight: 700;
+  color: #2081e2;
+}
+
+.opensea-owner {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1a1a1a;
+  font-family: 'Courier New', monospace;
+}
+
+.opensea-nft-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.opensea-view-button {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: white;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.opensea-view-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+}
+
+.opensea-buy-button {
+  background: linear-gradient(135deg, #2081e2, #1868b7);
+  color: white;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.opensea-buy-button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(32, 129, 226, 0.4);
+}
+
+.opensea-buy-button:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.opensea-rarity {
+  text-align: center;
+  padding: 8px;
+  background: linear-gradient(135deg, #ffd700, #ffed4e);
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #8b6914;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .opensea-nft-card {
+    margin-bottom: 16px;
+  }
+  
+  .opensea-nft-image-container {
+    height: 240px;
+  }
+  
+  .opensea-nft-details {
+    padding: 16px;
+  }
+  
+  .opensea-nft-info {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  
+  .opensea-nft-actions {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  
+  .opensea-view-button,
+  .opensea-buy-button {
+    padding: 12px 16px;
+    font-size: 16px;
+  }
+}
+
+/* Animation for loading state */
+@keyframes opensea-shimmer {
+  0% {
+    background-position: -468px 0;
+  }
+  100% {
+    background-position: 468px 0;
+  }
+}
+
+.opensea-nft-card.loading {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 400% 100%;
+  animation: opensea-shimmer 1.2s ease-in-out infinite;
+} 
