@@ -149,22 +149,10 @@ export const nftmarketaddress = "0x5FbDB2315678afecb367f032d93F642f64180aa3"
 const OPENSEA_API_KEY = 'your-api-key-here'
 ```
 
-## 🎯 Tính Năng Đặc Biệt
-
 ### Dual Storage System
 - **Blockchain**: Lưu SVG placeholder (tiết kiệm gas)
 - **Local**: Lưu media gốc cho playback
 - **Smart Detection**: Tự động phát hiện loại media
-
-### Media Optimization
-- **Images**: Auto resize > 1MB
-- **Videos**: SVG placeholder với video icon
-- **Audio**: SVG placeholder với audio waves
-
-### Gas Optimization
-- Auto estimate gas limit
-- 20% buffer cho safety
-- Optimized metadata size
 
 ## 🛡️ Security Features
 
@@ -192,36 +180,11 @@ Account #2: 0x3C44C...7b47 (10000 ETH)
 ```
 
 ## 🚀 Deployment
-
-### Deploy lên Testnet
-```bash
-# Cấu hình network trong hardhat.config.js
-npx hardhat run scripts/deploy.js --network goerli
-```
-
 ### Deploy lên Mainnet
 ```bash
 # Cẩn thận với mainnet!
 npx hardhat run scripts/deploy.js --network mainnet
 ```
-
-## 🤝 Contributing
-
-1. Fork repository
-2. Tạo feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to branch (`git push origin feature/AmazingFeature`)
-5. Tạo Pull Request
-
-## 📝 Changelog
-
-### v1.0.0 (Latest)
-- ✅ Complete NFT marketplace
-- ✅ Multi-media support (image/video/audio)
-- ✅ OpenSea integration
-- ✅ Wallet integration với real-time balance
-- ✅ Gas optimization
-- ✅ Responsive design
 
 ## 🐛 Known Issues
 
