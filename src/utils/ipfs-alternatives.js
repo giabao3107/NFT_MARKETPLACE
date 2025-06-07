@@ -1,5 +1,9 @@
-// Alternative IPFS implementations for NFT storage
-// Optimized for blockchain - small metadata, efficient storage
+// IPFS Alternative Solutions for NFT Marketplace - Images Only
+// Fallback approach for file hosting when IPFS is unavailable
+
+import { toast } from 'react-toastify';
+import { PlaceholderService } from './placeholderService';
+import { SUPPORTED_FORMATS, MAX_FILE_SIZE } from './constants';
 
 // Helper function for Unicode-safe base64 encoding
 const base64Encode = (str) => {
@@ -38,21 +42,9 @@ export const uploadToDataURL = async (file) => {
       reader.onload = (e) => {
         const dataUrl = e.target.result;
         
-        // For blockchain storage, we need much smaller data
-        // Generate a placeholder that represents the file without storing full data
-        const fileInfo = {
-          name: file.name,
-          size: file.size,
-          type: file.type,
-          lastModified: file.lastModified
-        };
-        
-        // Create a deterministic placeholder based on file properties
-        const fileHash = btoa(JSON.stringify(fileInfo)).substring(0, 16);
-        const placeholderUrl = `https://via.placeholder.com/400x400/6366f1/ffffff?text=${encodeURIComponent(file.name.substring(0, 10))}`;
-        
-        console.log('File processed for blockchain storage (optimized size)');
-        resolve(placeholderUrl);
+        // Return the actual data URL for the image
+        console.log('✅ File processed successfully - returning actual image data');
+        resolve(dataUrl);
       };
       reader.onerror = () => reject(new Error('Failed to read file'));
       reader.readAsDataURL(file);
@@ -130,68 +122,6 @@ export const uploadFileToIPFS = async (file) => {
       }
     }
     
-    // For video files, create a placeholder with video info
-    if (file.type.startsWith('video/')) {
-      console.log('🎬 Creating video placeholder for blockchain storage...');
-      const videoInfo = {
-        name: file.name.substring(0, 20),
-        size: Math.round(file.size / (1024 * 1024)) + 'MB',
-        type: 'video',
-        duration: 'Video NFT'
-      };
-      
-      // Create a simple SVG placeholder for videos with proper encoding
-      const svgContent = `
-        <svg width="400" height="300" xmlns="http://www.w3.org/2000/svg">
-          <rect width="400" height="300" fill="#1a1a2e"/>
-          <circle cx="200" cy="130" r="30" fill="#6366f1"/>
-          <polygon points="190,120 190,140 210,130" fill="white"/>
-          <text x="200" y="180" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="14">
-            📹 ${videoInfo.name}
-          </text>
-          <text x="200" y="200" text-anchor="middle" fill="#888" font-family="Arial, sans-serif" font-size="12">
-            ${videoInfo.size} Video NFT
-          </text>
-        </svg>
-      `.trim();
-      
-      const dataUrl = `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(svgContent)))}`;
-      console.log('✅ Video placeholder created:', dataUrl.substring(0, 100) + '...');
-      return dataUrl;
-    }
-    
-    // For audio files, create a placeholder with audio info  
-    if (file.type.startsWith('audio/')) {
-      console.log('🎵 Creating audio placeholder for blockchain storage...');
-      const audioInfo = {
-        name: file.name.substring(0, 20),
-        size: Math.round(file.size / (1024 * 1024)) + 'MB',
-        type: 'audio'
-      };
-      
-      // Create a simple SVG placeholder for audio with proper encoding
-      const svgContent = `
-        <svg width="400" height="300" xmlns="http://www.w3.org/2000/svg">
-          <rect width="400" height="300" fill="#2d1b69"/>
-          <circle cx="200" cy="130" r="30" fill="#8b5cf6"/>
-          <circle cx="170" cy="130" r="8" fill="white"/>
-          <circle cx="185" cy="130" r="12" fill="white"/>
-          <circle cx="205" cy="130" r="16" fill="white"/>
-          <circle cx="225" cy="130" r="10" fill="white"/>
-          <text x="200" y="180" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="14">
-            🎵 ${audioInfo.name}
-          </text>
-          <text x="200" y="200" text-anchor="middle" fill="#888" font-family="Arial, sans-serif" font-size="12">
-            ${audioInfo.size} Audio NFT
-          </text>
-        </svg>
-      `.trim();
-      
-      const dataUrl = `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(svgContent)))}`;
-      console.log('✅ Audio placeholder created:', dataUrl.substring(0, 100) + '...');
-      return dataUrl;
-    }
-    
     // For other file types, create a generic placeholder
     const fileInfo = {
       name: file.name.substring(0, 20),
@@ -212,13 +142,13 @@ export const uploadFileToIPFS = async (file) => {
 // Blockchain-optimized metadata with dual storage
 export const uploadJSONToIPFS = async (jsonData, originalFileUrl = null) => {
   try {
-    console.log('📝 Creating blockchain-optimized metadata with playback support...');
+    console.log('📝 Creating blockchain-optimized metadata...');
     
-    // Create minimal metadata for blockchain storage
+    // Create metadata for blockchain storage with real image data
     const optimizedMetadata = {
       name: jsonData.name || 'Untitled NFT',
       description: jsonData.description || 'NFT created on marketplace',
-      image: jsonData.image, // This is the optimized placeholder
+      image: jsonData.image, // This should be the real image data URL
       // Add original media URL for playback if available
       ...(originalFileUrl && { 
         original_media: originalFileUrl,
@@ -245,12 +175,20 @@ export const uploadJSONToIPFS = async (jsonData, originalFileUrl = null) => {
       ]
     };
     
+    // Log metadata details for debugging
+    console.log('📋 Metadata details:', {
+      name: optimizedMetadata.name,
+      hasImage: !!optimizedMetadata.image,
+      imageType: optimizedMetadata.image?.startsWith('data:') ? 'Data URL' : 'External URL',
+      imageSize: optimizedMetadata.image?.length || 0
+    });
+    
     // Create a much smaller data URL
     const jsonString = JSON.stringify(optimizedMetadata);
     const base64Data = base64Encode(jsonString);
     const dataUrl = `data:application/json;base64,${base64Data}`;
     
-    console.log(`✅ Metadata optimized (${jsonString.length} chars) with playback support`);
+    console.log(`✅ Metadata created (${jsonString.length} chars) with real image data`);
     return dataUrl;
   } catch (error) {
     console.error('❌ Error creating metadata:', error);
@@ -285,9 +223,278 @@ export const isDevelopmentMode = () => {
   return process.env.NODE_ENV === 'development' || window.location.hostname === 'localhost';
 };
 
+export const uploadToIPFSAlternative = async (file, onProgress) => {
+  try {
+    console.log('📁 Starting file upload:', file.name, file.size, 'bytes');
+    
+    if (file.size > MAX_FILE_SIZE) {
+      throw new Error(`File too large. Maximum size is ${MAX_FILE_SIZE / 1024 / 1024}MB`);
+    }
+
+    // Simulate upload progress
+    const simulateProgress = () => {
+      return new Promise((resolve) => {
+        let progress = 0;
+        const interval = setInterval(() => {
+          progress += Math.random() * 30;
+          if (progress >= 100) {
+            progress = 100;
+            clearInterval(interval);
+            resolve();
+          }
+          if (onProgress) onProgress(Math.floor(progress));
+        }, 200);
+      });
+    };
+
+    await simulateProgress();
+
+    // Handle different file types - prioritize returning real data
+    if (SUPPORTED_FORMATS.includes(file.type)) {
+      console.log('✅ Processing supported image file with real data');
+      return await processImageFile(file);
+    } else if (file.type === 'application/json') {
+      return await processJSONFile(file);
+    } else {
+      console.warn('Unsupported file type:', file.type);
+      return getImagePlaceholder(file);
+    }
+
+  } catch (error) {
+    console.error('❌ Upload failed:', error);
+    
+    // For JSON metadata files, create minimal metadata data URL instead of placeholder
+    if (file.type === 'application/json') {
+      console.log('🔄 Creating fallback metadata data URL...');
+      try {
+        const fallbackMetadata = {
+          name: "NFT",
+          description: "NFT created on marketplace", 
+          image: PlaceholderService.getLocalPlaceholder(),
+          error: "Metadata upload failed, using fallback"
+        };
+        const jsonString = JSON.stringify(fallbackMetadata);
+        const dataUrl = `data:application/json;base64,${btoa(jsonString)}`;
+        console.log('✅ Fallback metadata data URL created');
+        return dataUrl;
+      } catch (metaError) {
+        console.error('❌ Failed to create fallback metadata:', metaError);
+      }
+    }
+    
+    // For other files, use local placeholder
+    return PlaceholderService.getLocalPlaceholder();
+  }
+};
+
+const processImageFile = async (file) => {
+  try {
+    console.log('🖼️ Processing image file:', file.name, file.type, `${Math.round(file.size/1024)}KB`);
+    
+    // Convert to data URL for immediate use - return the actual image
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      
+      reader.onload = (e) => {
+        const dataUrl = e.target.result;
+        console.log('✅ Image processed successfully as data URL');
+        resolve(dataUrl);
+      };
+      
+      reader.onerror = () => {
+        console.error('❌ Failed to read image file');
+        reject(new Error('Failed to process image'));
+      };
+      
+      reader.readAsDataURL(file);
+    });
+  } catch (error) {
+    console.error('❌ Error processing image:', error);
+    // Only use placeholder if there's a real error
+    throw error;
+  }
+};
+
+const processJSONFile = async (file) => {
+  try {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      
+      reader.onload = (e) => {
+        try {
+          const content = e.target.result;
+          console.log('📋 JSON content length:', content.length);
+          
+          // Use base64Encode for Unicode-safe encoding
+          const dataUrl = `data:application/json;base64,${base64Encode(content)}`;
+          console.log('✅ JSON processed as data URL with Unicode support');
+          resolve(dataUrl);
+        } catch (parseError) {
+          console.error('❌ Error processing JSON content:', parseError);
+          reject(parseError);
+        }
+      };
+      
+      reader.onerror = () => {
+        console.error('❌ Failed to read JSON file');
+        reject(new Error('Failed to read JSON file'));
+      };
+      
+      reader.readAsText(file, 'utf-8'); // Ensure UTF-8 encoding
+    });
+  } catch (error) {
+    console.error('❌ Error processing JSON:', error);
+    // Create a proper fallback with Unicode support
+    const fallbackMetadata = {
+      name: "NFT",
+      description: "Metadata processing failed",
+      image: PlaceholderService.getLocalPlaceholder(),
+      error: "Failed to process metadata"
+    };
+    return `data:application/json;base64,${base64Encode(JSON.stringify(fallbackMetadata))}`;
+  }
+};
+
+const getImagePlaceholder = (file) => {
+  const tokenId = file.name ? file.name.length : Date.now();
+  return PlaceholderService.getPlaceholder(400, 400, tokenId);
+};
+
+// Alternative upload methods for different scenarios
+export const uploadImageToDataURL = async (file) => {
+  if (!SUPPORTED_FORMATS.includes(file.type)) {
+    throw new Error('Unsupported image type');
+  }
+  
+  return processImageFile(file);
+};
+
+export const createPlaceholderURL = (text = 'NFT', width = 400, height = 400) => {
+  const tokenId = text.length || Date.now();
+  return PlaceholderService.getPlaceholder(width, height, tokenId);
+};
+
+// Enhanced error handling and retry mechanism
+export const uploadWithRetry = async (file, maxRetries = 3, onProgress) => {
+  let lastError;
+  
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      console.log(`📁 Upload attempt ${attempt}/${maxRetries} for:`, file.name);
+      
+      if (onProgress) {
+        onProgress((attempt - 1) * (100 / maxRetries));
+      }
+      
+      const result = await uploadToIPFSAlternative(file, (progress) => {
+        const totalProgress = ((attempt - 1) * 100 + progress) / maxRetries;
+        if (onProgress) onProgress(Math.floor(totalProgress));
+      });
+      
+      console.log(`✅ Upload successful on attempt ${attempt}`);
+      return result;
+      
+    } catch (error) {
+      console.error(`❌ Upload attempt ${attempt} failed:`, error);
+      lastError = error;
+      
+      if (attempt < maxRetries) {
+        console.log(`🔄 Retrying in ${attempt} seconds...`);
+        await new Promise(resolve => setTimeout(resolve, attempt * 1000));
+      }
+    }
+  }
+  
+  console.error('❌ All upload attempts failed, using fallback');
+  toast.error(`Upload failed after ${maxRetries} attempts. Using placeholder.`);
+  
+  // For JSON metadata files, create data URL instead of external placeholder
+  if (file.type === 'application/json') {
+    console.log('🔄 Creating fallback metadata after retry failures...');
+    try {
+      const fallbackMetadata = {
+        name: "NFT",
+        description: "NFT created on marketplace",
+        image: PlaceholderService.getLocalPlaceholder(),
+        error: `Upload failed after ${maxRetries} attempts`
+      };
+      const jsonString = JSON.stringify(fallbackMetadata);
+      return `data:application/json;base64,${btoa(jsonString)}`;
+    } catch (metaError) {
+      console.error('❌ Failed to create fallback metadata:', metaError);
+    }
+  }
+  
+  return PlaceholderService.getLocalPlaceholder();
+};
+
+// Test function to check placeholder service availability
+export const testPlaceholderServices = async () => {
+  try {
+    const results = await PlaceholderService.testServices();
+    console.log('📊 Placeholder service test results:', results);
+    return results;
+  } catch (error) {
+    console.error('❌ Error testing placeholder services:', error);
+    return [];
+  }
+};
+
+// Validate file before upload
+export const validateFile = (file) => {
+  const errors = [];
+  
+  if (!file) {
+    errors.push('No file selected');
+    return errors;
+  }
+  
+  if (file.size > MAX_FILE_SIZE) {
+    errors.push(`File too large. Maximum size is ${MAX_FILE_SIZE / 1024 / 1024}MB`);
+  }
+  
+  if (!SUPPORTED_FORMATS.includes(file.type)) {
+    errors.push(`Unsupported file type: ${file.type}. Only JPG, PNG, GIF, WebP are supported.`);
+  }
+  
+  return errors;
+};
+
+// Get file info for display
+export const getFileInfo = (file) => {
+  if (!file) return null;
+  
+  return {
+    name: file.name,
+    size: file.size,
+    type: file.type,
+    lastModified: file.lastModified,
+    readable: {
+      size: formatFileSize(file.size),
+      type: 'image',
+      modified: new Date(file.lastModified).toLocaleDateString()
+    }
+  };
+};
+
+const formatFileSize = (bytes) => {
+  if (bytes === 0) return '0 Bytes';
+  const k = 1024;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+};
+
 export default {
   uploadFileToIPFS,
   uploadJSONToIPFS,
   fetchFromIPFS,
-  isDevelopmentMode
+  isDevelopmentMode,
+  uploadToIPFSAlternative,
+  uploadImageToDataURL,
+  createPlaceholderURL,
+  uploadWithRetry,
+  testPlaceholderServices,
+  validateFile,
+  getFileInfo
 }; 

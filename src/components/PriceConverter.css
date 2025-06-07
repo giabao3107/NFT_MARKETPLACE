@@ -1,0 +1,139 @@
+.price-converter {
+  margin-top: 12px;
+  padding: 16px;
+  background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
+  border: 1px solid #374151;
+  border-radius: 12px;
+  animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.converter-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #374151;
+}
+
+.converter-icon {
+  font-size: 16px;
+}
+
+.converter-label {
+  color: #f9fafb;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.converter-amounts {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.converter-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  background: rgba(255, 107, 53, 0.05);
+  border: 1px solid rgba(255, 107, 53, 0.2);
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.converter-item:hover {
+  background: rgba(255, 107, 53, 0.1);
+  border-color: rgba(255, 107, 53, 0.3);
+  transform: translateX(2px);
+}
+
+.currency-flag {
+  font-size: 18px;
+  width: 24px;
+  text-align: center;
+}
+
+.currency-amount {
+  color: #ff6b35;
+  font-size: 14px;
+  font-weight: 700;
+  font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
+  flex: 1;
+}
+
+.currency-code {
+  color: #9ca3af;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+.converter-note {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  background: rgba(59, 130, 246, 0.05);
+  border: 1px solid rgba(59, 130, 246, 0.2);
+  border-radius: 6px;
+  font-size: 11px;
+  color: #9ca3af;
+  font-style: italic;
+}
+
+.note-icon {
+  font-size: 12px;
+  color: #3b82f6;
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+  .price-converter {
+    padding: 12px;
+  }
+  
+  .converter-amounts {
+    gap: 6px;
+  }
+  
+  .converter-item {
+    padding: 6px 10px;
+  }
+  
+  .currency-amount {
+    font-size: 13px;
+  }
+  
+  .converter-note {
+    padding: 6px 10px;
+    font-size: 10px;
+  }
+}
+
+/* Loading state */
+.price-converter.loading {
+  opacity: 0.6;
+}
+
+.price-converter.loading .converter-item {
+  background: rgba(156, 163, 175, 0.1);
+  border-color: rgba(156, 163, 175, 0.2);
+}
+
+.price-converter.loading .currency-amount {
+  color: #6b7280;
+} 

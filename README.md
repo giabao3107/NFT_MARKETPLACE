@@ -186,11 +186,59 @@ Account #2: 0x3C44C...7b47 (10000 ETH)
 npx hardhat run scripts/deploy.js --network mainnet
 ```
 
+## 🐛 Debugging - Khắc Phục Sự Cố
+
+### 🖼️ Vấn Đề Hiển Thị Ảnh
+
+Nếu ảnh bạn upload không hiển thị đúng:
+
+1. **Kiểm tra Console Logs**: Mở DevTools (F12) và tìm:
+   - `🖼️ Final image URL for token X: Data URL (Y chars)` - Xác nhận ảnh được lưu đúng
+   - `✅ Image loaded successfully` - Xác nhận ảnh hiển thị thành công
+   - `❌ Image load failed` - Báo lỗi hiển thị
+
+2. **Sử dụng Debug Button**: Khi upload ảnh trong Create NFT:
+   - Click nút "🔍 Debug" trong preview area
+   - Kiểm tra console để xem thông tin chi tiết
+
+3. **Nguyên nhân thường gặp**:
+   - **Ảnh quá lớn**: File trên 1MB sẽ được tự động optimize
+   - **Giới hạn browser**: Data URL quá lớn có thể không load được
+   - **Vấn đề network**: Local development có thể có delay
+
+4. **Giải pháp**:
+   - Sử dụng ảnh dưới 1MB để có kết quả tốt nhất
+   - Dùng định dạng JPG thay vì PNG để giảm size
+   - Refresh trang và thử upload lại
+   - Kiểm tra Hardhat node có chạy đúng không
+
+### 🏷️ Vấn Đề Category Filtering
+
+Categories trong Collections phải khớp với Create NFT:
+
+- **Nghệ thuật** (Art)
+- **Nhiếp ảnh** (Photography) 
+- **Nghệ thuật số** (Digital Art)
+- **Sưu tập** (Collectibles)
+- **Game** (Gaming)
+- **Memes** (Memes)
+
+Nếu categories không khớp, filtering sẽ không hoạt động.
+
+### 🔌 Vấn Đề Kết Nối Contract
+
+Đảm bảo:
+1. Hardhat node đang chạy trên port 8545
+2. MetaMask kết nối đến localhost:8545 (Chain ID: 1337)
+3. Contracts đã được deploy đến network hiện tại
+4. Account có đủ ETH để trả gas fee
+
 ## 🐛 Known Issues
 
 - Video playback chỉ hỗ trợ trên NFT mới tạo
 - OpenSea API có rate limit
 - IPFS loading có thể chậm
+- Data URL cho ảnh lớn có thể gây lag browser
 
 ## 🏆 Credits
 

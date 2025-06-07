@@ -1,0 +1,56 @@
+/* Simple Orange Circle Loading Spinner */
+.simple-spinner-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.simple-loading-spinner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.orange-circle {
+  border: 3px solid #f3f3f3;
+  border-top: 3px solid #ff6b35;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+/* Size variants */
+.spinner-small .orange-circle {
+  width: 20px;
+  height: 20px;
+  border-width: 2px;
+}
+
+.spinner-medium .orange-circle {
+  width: 30px;
+  height: 30px;
+  border-width: 3px;
+}
+
+.spinner-large .orange-circle {
+  width: 40px;
+  height: 40px;
+  border-width: 4px;
+}
+
+.spinner-fullscreen .orange-circle {
+  width: 50px;
+  height: 50px;
+  border-width: 4px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}

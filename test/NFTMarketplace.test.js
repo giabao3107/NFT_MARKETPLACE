@@ -37,7 +37,7 @@ describe("NFTMarketplace", function () {
     // Buy NFT
     await nftMarketplace
       .connect(buyer)
-      .createMarketSale(nft.address, 1, { value: auctionPrice });
+      .buyNFT(nft.address, 1, { value: auctionPrice });
 
     // Check if buyer owns the NFT
     const items = await nftMarketplace.connect(buyer).fetchMyNFTs();

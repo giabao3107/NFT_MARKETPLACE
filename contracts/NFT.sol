@@ -10,6 +10,20 @@ contract NFT is ERC721URIStorage {
     Counters.Counter private _tokenIds;
     address contractAddress;
 
+    // Custom events for MetaMask Activity
+    event TokenCreated(
+        address indexed creator,
+        uint256 indexed tokenId,
+        string tokenURI,
+        string activityType
+    );
+
+    event NFTMinted(
+        address indexed to,
+        uint256 indexed tokenId,
+        string message
+    );
+
     constructor(address marketplaceAddress) ERC721("Metaverse", "MTVS") {
         contractAddress = marketplaceAddress;
     }
@@ -21,6 +35,11 @@ contract NFT is ERC721URIStorage {
         _mint(msg.sender, newItemId);
         _setTokenURI(newItemId, tokenURI);
         setApprovalForAll(contractAddress, true);
+
+        // Emit custom events for better MetaMask Activity display
+        emit TokenCreated(msg.sender, newItemId, tokenURI, "Create Token");
+        emit NFTMinted(msg.sender, newItemId, "NFT Created Successfully");
+
         return newItemId;
     }
     

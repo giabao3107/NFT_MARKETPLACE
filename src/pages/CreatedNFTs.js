@@ -5,6 +5,7 @@ import { toast } from 'react-toastify';
 
 import NFTCard from '../components/NFTCard';
 import NFTDetailsModal from '../components/NFTDetailsModal';
+import LoadingSpinner from '../components/LoadingSpinner';
 import { nftaddress, nftmarketaddress } from '../config';
 import NFT from '../artifacts/contracts/NFT.sol/NFT.json';
 import Market from '../artifacts/contracts/NFTMarketplace.sol/NFTMarketplace.json';
@@ -210,8 +211,7 @@ export default function CreatedNFTs() {
     return (
       <div className="created-nfts-container">
         <div className="empty-state">
-          <h2>Loading...</h2>
-          <p>Fetching your created NFTs from the blockchain...</p>
+          <LoadingSpinner size="large" />
         </div>
       </div>
     );
