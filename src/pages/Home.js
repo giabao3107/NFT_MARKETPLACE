@@ -401,7 +401,6 @@ export default function Home() {
       }
       
       console.log('📤 Sending transaction...');
-      toast.info(`Mua NFT: ${nft.name} với giá ${nft.price} ETH...`);
       
       // Get seller balance before purchase
       const sellerBalanceBefore = await provider.getBalance(nft.seller);
@@ -422,7 +421,6 @@ export default function Home() {
       });
       
       console.log('✅ Transaction sent:', transaction.hash);
-      toast.info('Giao dịch đã gửi! Đang chờ xác nhận...');
       
       // Show immediate notification to seller about incoming payment
       if (window.ethereum && nft.seller.toLowerCase() !== account.toLowerCase()) {
@@ -502,25 +500,9 @@ export default function Home() {
           console.log('⚠️ Duplicate buy activity detected, skipping save');
         }
         
-        // Check if seller received payment
-        if (actualSellerPayment > 0) {
-          console.log('✅ Seller payment successful!');
-          toast.success(
-            `🎉 Mua NFT thành công!\n💵 Giá NFT: ${nft.price} ETH\n🏪 Phí sàn: ${finalListingPriceEth} ETH\n💰 Người bán nhận: ${actualSellerPayment.toFixed(4)} ETH`,
-            { autoClose: 6000 }
-          );
-        } else if (actualSellerPayment === 0) {
-          console.log('⚠️ Seller receives 0 ETH (price equals listing fee)');
-          toast.warning(
-            `🎉 Mua NFT thành công!\n💵 Giá NFT: ${nft.price} ETH\n🏪 Phí sàn: ${finalListingPriceEth} ETH\n⚠️ Người bán nhận: 0 ETH (giá bằng phí sàn)`,
-            { autoClose: 6000 }
-          );
-        } else {
-          console.log('⚠️ Seller payment calculation error - negative amount:', actualSellerPayment);
-          toast.error(
-            `❌ Lỗi: Giá NFT (${nft.price} ETH) thấp hơn phí sàn (${finalListingPriceEth} ETH)!\nKhông thể hoàn thành giao dịch.`
-          );
-        }
+        // Simple success message
+        console.log('✅ NFT purchase successful!');
+        toast.success('🎉 Đã mua thành công!');
         
         // Update balance in context
         await updateBalance();
@@ -882,9 +864,13 @@ export default function Home() {
             </div>
             
             <h1 className="hero-title-new">
-              Khám phá, sưu tầm và 
-              <span className="title-highlight"> giao dịch NFT</span> 
-              độc đáo
+              <span className="title-word">Khám phá</span>
+              <span className="title-separator">•</span>
+              <span className="title-word">sưu tầm</span>
+              <span className="title-separator">•</span>
+              <span className="title-word">giao dịch</span>
+              <br />
+              <span className="title-highlight">NFT độc đáo</span>
             </h1>
             
             <p className="hero-description-new">

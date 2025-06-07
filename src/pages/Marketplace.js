@@ -122,7 +122,6 @@ export default function Marketplace() {
       const price = ethers.utils.parseUnits(nft.price.toString(), 'ether');
       
       console.log('🛒 Buying NFT:', nft.name, 'for', nft.price, 'ETH');
-      toast.info(`Buying ${nft.name}...`);
 
       // Use buyNFT instead of createMarketSale for better tracking
       const transaction = await contract.buyNFT(nftaddress, nft.itemId, {
@@ -131,7 +130,6 @@ export default function Marketplace() {
       });
 
       console.log('📤 Transaction sent:', transaction.hash);
-      toast.info('Transaction sent! Waiting for confirmation...');
 
       const receipt = await transaction.wait();
       console.log('✅ Purchase confirmed:', receipt);
@@ -163,7 +161,7 @@ export default function Marketplace() {
           detail: { activity: buyActivity } 
         }));
 
-        toast.success(`NFT purchased successfully!`);
+        toast.success('🎉 Đã mua thành công!');
         loadNFTs();
       }
     } catch (error) {

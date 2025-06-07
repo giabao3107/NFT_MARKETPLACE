@@ -480,16 +480,6 @@ export default function CreateItem() {
 
           {/* Action Section */}
           <div className="action-section-new">
-            <div className="action-info">
-              <div className="info-card-new">
-                <div className="info-icon">💡</div>
-                <div className="info-content">
-                  <h4>Phí tạo NFT</h4>
-                  <p>Phí gas + 0.01 ETH phí đăng bán trên marketplace</p>
-                </div>
-              </div>
-            </div>
-            
             <button
               className="create-button-new"
               onClick={listNFTForSale}

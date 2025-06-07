@@ -6,7 +6,7 @@ import { toast } from 'react-toastify';
 import NFTCard from '../components/NFTCard';
 import NFTDetailsModal from '../components/NFTDetailsModal';
 import LoadingSpinner from '../components/LoadingSpinner';
-import TransactionHistory from '../components/TransactionHistory';
+
 import { nftaddress, nftmarketaddress } from '../config';
 import NFT from '../artifacts/contracts/NFT.sol/NFT.json';
 import Market from '../artifacts/contracts/NFTMarketplace.sol/NFTMarketplace.json';
@@ -530,9 +530,6 @@ export default function MyNFTs() {
         isOpen={modalOpen}
         onClose={closeModal}
       />
-      
-      {/* Transaction History Section */}
-      <TransactionHistory />
     </div>
   );
 } 

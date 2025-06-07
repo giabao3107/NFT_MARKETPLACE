@@ -59,9 +59,7 @@ export default function TransactionHistory() {
       const sellerPaidFilter = contract.filters.SellerPaid(account);
       const sellerPaidEvents = await contract.queryFilter(sellerPaidFilter, fromBlock);
 
-      // Get marketplace fee events (if this account is marketplace owner)
-      const feeFilter = contract.filters.MarketplaceFeeCollected(account);
-      const feeEvents = await contract.queryFilter(feeFilter, fromBlock);
+
 
       // Get market item sold events where this account was the seller
       const soldFilter = contract.filters.MarketItemSold();
@@ -87,19 +85,7 @@ export default function TransactionHistory() {
         });
       }
 
-      // Add marketplace fees
-      for (const event of feeEvents) {
-        const block = await provider.getBlock(event.blockNumber);
-        allTransactions.push({
-          id: `fee-${event.transactionHash}-${event.logIndex}`,
-          type: 'marketplace_fee',
-          amount: ethers.utils.formatEther(event.args.fee),
-          itemId: event.args.itemId.toString(),
-          timestamp: block.timestamp,
-          txHash: event.transactionHash,
-          description: 'Phí marketplace'
-        });
-      }
+
 
       // Get activities from localStorage (create token, create market item, buy nft)
       const localActivities = JSON.parse(localStorage.getItem('nft_activity') || '[]');
@@ -177,8 +163,6 @@ export default function TransactionHistory() {
     switch (type) {
       case 'seller_payment':
         return '💰';
-      case 'marketplace_fee':
-        return '💼';
       case 'create_token':
         return '🎨';
       case 'create_market':
@@ -194,8 +178,6 @@ export default function TransactionHistory() {
     switch (type) {
       case 'seller_payment':
         return '#10b981'; // Green for income
-      case 'marketplace_fee':
-        return '#3b82f6'; // Blue for fees
       case 'create_token':
         return '#8b5cf6'; // Purple for creation
       case 'create_market':
