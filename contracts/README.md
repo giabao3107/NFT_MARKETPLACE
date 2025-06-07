@@ -1,560 +1,806 @@
-# NFT Marketplace Smart Contracts
+# 🔗 NFT Marketplace Smart Contracts
 
-## Tổng quan dự án
+## 📋 Tổng Quan
 
-Dự án này bao gồm 2 smart contract chính tạo nên một hệ thống NFT marketplace hoàn chỉnh trên Ethereum blockchain:
+Hệ thống NFT Marketplace bao gồm 2 smart contracts chính được thiết kế để hoạt động cùng nhau:
 
-- **NFT.sol**: Contract ERC721 để mint và quản lý NFT tokens
-- **NFTMarketplace.sol**: Contract marketplace để list và trade NFT tokens
+- **🎨 NFT.sol**: ERC721 contract để mint và quản lý NFT tokens
+- **🏪 NFTMarketplace.sol**: Marketplace contract để list và trade NFT tokens với hệ thống escrow
 
-## Kiến trúc hệ thống
+---
+
+## 🏗️ Kiến Trúc Hệ Thống
 
 ```
-┌─────────────────┐       ┌─────────────────────┐
-│   NFT.sol       │       │  NFTMarketplace.sol │
-│  (ERC721)       │◄─────►│   (Marketplace)     │
-├─────────────────┤       ├─────────────────────┤
-│ - _tokenIds     │       │ - _itemIds          │
-│ - contractAddr  │       │ - _itemsSold        │
-│ - createToken() │       │ - listingPrice      │
-│ - getCurrentId()│       │ - MarketItem struct │
-└─────────────────┘       │ - mapping items     │
-                          │ - createMarketItem()│
-                          │ - createMarketSale()│
-                          │ - fetch functions   │
-                          └─────────────────────┘
+                    ┌─────────────────────────────────────┐
+                    │         USER INTERACTIONS           │
+                    │                                     │
+                    │  ┌─────────┐    ┌─────────────┐     │
+                    │  │ Creator │    │   Buyer     │     │
+                    │  │ (Alice) │    │   (Bob)     │     │
+                    │  └─────────┘    └─────────────┘     │
+                    └─────────────────────────────────────┘
+                                    │
+                    ┌───────────────┼───────────────┐
+                    ▼               ▼               ▼
+    ┌─────────────────────┐                 ┌─────────────────────┐
+    │     NFT.sol         │◄────────────────┤  NFTMarketplace.sol │
+    │   (ERC721 Token)    │   Pre-Approval  │   (Trading Logic)   │
+    ├─────────────────────┤                 ├─────────────────────┤
+    │                     │                 │                     │
+    │ 🎯 Core Functions:  │                 │ 🎯 Core Functions:  │
+    │ • mint tokens       │                 │ • list items        │
+    │ • manage metadata   │                 │ • execute sales     │
+    │ • track ownership   │                 │ • handle payments   │
+    │ • auto-approval     │                 │ • manage escrow     │
+    │                     │                 │                     │
+    │ 💾 State:           │                 │ 💾 State:           │
+    │ • _tokenIds         │                 │ • _itemIds          │
+    │ • token→URI mapping │                 │ • _itemsSold        │
+    │ • owner→balance     │                 │ • item→data mapping │
+    │ • approval→mapping  │                 │ • listingPrice      │
+    └─────────────────────┘                 └─────────────────────┘
 ```
 
-## Phân tích chi tiết từng contract
+---
 
-### 1. NFT.sol - ERC721 Token Contract
+## 🎨 NFT.sol - Logic Analysis
 
-#### Kế thừa và Import
+### 📊 Contract Structure
+
 ```solidity
-import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
-import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
-import "@openzeppelin/contracts/utils/Counters.sol";
-```
-
-**Lý do lựa chọn:**
-- `ERC721URIStorage`: Cho phép lưu trữ metadata URI cho từng token
-- `Counters`: Cung cấp counter an toàn cho token IDs
-- Sử dụng OpenZeppelin để đảm bảo security standards
-
-#### State Variables
-```solidity
-Counters.Counter private _tokenIds;
-address contractAddress;
-```
-
-**Phân tích:**
-- `_tokenIds`: Counter để track unique token IDs, bắt đầu từ 0
-- `contractAddress`: Địa chỉ marketplace được pre-approve để transfer tokens
-
-#### Constructor Logic
-```solidity
-constructor(address marketplaceAddress) ERC721("Metaverse", "MTVS") {
-    contractAddress = marketplaceAddress;
-}
-```
-
-**Tại sao cần marketplaceAddress trong constructor:**
-- Thiết lập mối quan hệ tight coupling giữa NFT và Marketplace
-- Cho phép pre-approval tự động trong hàm `createToken()`
-
-#### Function Analysis
-
-**createToken()**
-```solidity
-function createToken(string memory tokenURI) public returns (uint) {
-    _tokenIds.increment();
-    uint256 newItemId = _tokenIds.current();
+contract NFT is ERC721, ERC721URIStorage {
+    using Counters for Counters.Counter;
     
-    _mint(msg.sender, newItemId);
-    _setTokenURI(newItemId, tokenURI);
-    setApprovalForAll(contractAddress, true);
-    return newItemId;
+    // State Variables
+    Counters.Counter private _tokenIds;      // Auto-incrementing ID
+    address contractAddress;                 // Marketplace address
+    
+    // Constructor
+    constructor(address marketplaceAddress) 
+        ERC721("Metaverse", "MTVS") 
+    
+    // Core Function
+    function createToken(string memory tokenURI) → uint256
 }
 ```
 
-**Logic flow:**
-1. Increment counter để tạo unique ID
-2. Mint token cho msg.sender
-3. Set metadata URI
-4. **Quan trọng**: Auto-approve marketplace contract
-5. Return token ID để caller có thể sử dụng
+### 🔄 Function Flow Analysis
 
-**Security considerations:**
-- Bất kỳ ai cũng có thể mint token (có thể cần access control)
-- Auto-approval có thể gây risk nếu marketplace bị compromise
+#### `createToken()` Step-by-Step Logic:
 
-### 2. NFTMarketplace.sol - Marketplace Contract
+```
+Input: tokenURI (string) - IPFS metadata link
+│
+├─ STEP 1: Increment Token Counter
+│  ├─ _tokenIds.increment()
+│  └─ newItemId = _tokenIds.current()  // Gets: 1, 2, 3, ...
+│
+├─ STEP 2: Mint NFT to Caller
+│  ├─ _mint(msg.sender, newItemId)
+│  └─ Creates ownership: msg.sender → tokenId
+│
+├─ STEP 3: Set Metadata URI
+│  ├─ _setTokenURI(newItemId, tokenURI)
+│  └─ Links token to metadata (images, properties)
+│
+├─ STEP 4: Pre-Approve Marketplace
+│  ├─ setApprovalForAll(contractAddress, true)
+│  └─ Allows marketplace to transfer NFT later
+│
+└─ STEP 5: Return Token ID
+   └─ return newItemId
+```
 
-#### Security Imports
+### 🧠 Design Decisions & Logic
+
+**1. Why Auto-Approval?**
+```solidity
+setApprovalForAll(contractAddress, true);
+```
+- **Problem**: User tạo NFT → User phải approve riêng → User list NFT
+- **Solution**: Auto-approve marketplace ngay khi mint
+- **Trade-off**: Convenience vs Security risk
+
+**2. Why Counters Library?**
+```solidity
+using Counters for Counters.Counter;
+```
+- **Prevents**: Integer overflow attacks
+- **Ensures**: Unique token IDs
+- **Pattern**: Industry standard for ID management
+
+**3. Why ERC721URIStorage?**
+```solidity
+contract NFT is ERC721, ERC721URIStorage
+```
+- **ERC721**: Basic NFT functionality
+- **ERC721URIStorage**: Adds per-token metadata storage
+- **Alternative**: Base URI + token ID pattern
+
+---
+
+## 🏪 NFTMarketplace.sol - Logic Analysis
+
+### 📊 Contract Structure
+
+```solidity
+contract NFTMarketplace is ReentrancyGuard {
+    using Counters for Counters.Counter;
+    
+    // State Management
+    Counters.Counter private _itemIds;       // Total items listed
+    Counters.Counter private _itemsSold;     // Items sold counter
+    address payable owner;                   // Platform owner
+    uint256 listingPrice = 0.025 ether;     // Platform fee
+    
+    // Data Structure
+    struct MarketItem {
+        uint itemId;           // Unique item ID
+        address nftContract;   // NFT contract address
+        uint256 tokenId;       // NFT token ID
+        address payable seller; // Original seller
+        address payable owner;  // Current owner (0x0 = listed)
+        uint256 price;         // Sale price
+        bool sold;             // Sale status
+    }
+    
+    mapping(uint256 => MarketItem) private idToMarketItem;
+}
+```
+
+### 🔄 Core Functions Flow
+
+#### 1. `createMarketItem()` - Listing Logic
+
+```
+Input: nftContract, tokenId, price
+Payment: listingPrice (0.025 ETH)
+│
+├─ STEP 1: Input Validation
+│  ├─ require(price > 0, "Price must be at least 1 wei")
+│  └─ require(msg.value == listingPrice, "Must pay listing fee")
+│
+├─ STEP 2: Generate Unique Item ID
+│  ├─ _itemIds.increment()
+│  └─ itemId = _itemIds.current()
+│
+├─ STEP 3: Create Market Item Struct
+│  └─ idToMarketItem[itemId] = MarketItem(
+│       itemId,               // Unique marketplace ID
+│       nftContract,          // NFT contract address
+│       tokenId,              // NFT token ID  
+│       payable(msg.sender),  // Seller address
+│       payable(address(0)),  // Owner = 0x0 (listed state)
+│       price,                // Sale price in wei
+│       false                 // sold = false
+│     )
+│
+├─ STEP 4: Transfer NFT to Escrow
+│  ├─ IERC721(nftContract).transferFrom(
+│  │    msg.sender,           // From seller
+│  │    address(this),        // To marketplace (escrow)
+│  │    tokenId               // Specific NFT
+│  │  )
+│  └─ NFT now held by marketplace
+│
+└─ STEP 5: Emit Event for Indexing
+   └─ emit MarketItemCreated(...)
+```
+
+#### 2. `buyNFT()` - Purchase Logic
+
+```
+Input: nftContract, itemId  
+Payment: exact item price
+│
+├─ STEP 1: Load Item Data
+│  ├─ MarketItem storage item = idToMarketItem[itemId]
+│  ├─ uint price = item.price
+│  └─ uint tokenId = item.tokenId
+│
+├─ STEP 2: Payment Validation
+│  └─ require(msg.value == price, "Submit exact asking price")
+│
+├─ STEP 3: Payment Distribution
+│  ├─ item.seller.transfer(msg.value)     // Seller gets full price
+│  └─ payable(owner).transfer(listingPrice) // Platform gets fee
+│
+├─ STEP 4: NFT Transfer
+│  └─ IERC721(nftContract).transferFrom(
+│       address(this),        // From marketplace escrow
+│       msg.sender,           // To buyer
+│       tokenId               // Specific NFT
+│     )
+│
+├─ STEP 5: State Updates
+│  ├─ item.owner = payable(msg.sender)    // New owner = buyer
+│  ├─ item.sold = true                    // Mark as sold
+│  └─ _itemsSold.increment()              // Update sold counter
+│
+└─ STEP 6: Event Emission
+   └─ emit MarketItemSold(...)
+```
+
+---
+
+## 🔄 Complete User Journey Flow
+
+### 📈 End-to-End Transaction Flow
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                           PHASE 1: NFT CREATION                            │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+Creator (Alice)
+    │
+    ├─ 1. Uploads media to IPFS
+    │    └─ Gets: "ipfs://QmHash123..."
+    │
+    └─ 2. Calls NFT.createToken(tokenURI)
+         │
+         ├─ NFT Contract Actions:
+         │  ├─ _tokenIds: 0 → 1
+         │  ├─ _mint(alice, tokenId=1)
+         │  ├─ _setTokenURI(1, "ipfs://QmHash123...")
+         │  └─ setApprovalForAll(marketplace, true)
+         │
+         └─ Result: Alice owns NFT #1, Marketplace pre-approved
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                          PHASE 2: MARKETPLACE LISTING                      │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+Creator (Alice)
+    │
+    └─ 3. Calls Marketplace.createMarketItem(nftAddr, 1, 1ETH) + 0.025ETH
+         │
+         ├─ Marketplace Contract Actions:
+         │  ├─ Validate: price > 0 ✓
+         │  ├─ Validate: msg.value == 0.025ETH ✓
+         │  ├─ _itemIds: 0 → 1
+         │  ├─ Create MarketItem struct:
+         │  │  ├─ itemId: 1
+         │  │  ├─ seller: alice
+         │  │  ├─ owner: 0x0 (listed)
+         │  │  ├─ price: 1 ETH
+         │  │  └─ sold: false
+         │  ├─ transferFrom(alice → marketplace, tokenId=1)
+         │  └─ emit MarketItemCreated(...)
+         │
+         └─ Result: NFT in escrow, Listed for 1 ETH
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                           PHASE 3: DISCOVERY                               │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+Buyer (Bob)
+    │
+    └─ 4. Calls Marketplace.fetchMarketItems()
+         │
+         ├─ Query Logic:
+         │  ├─ Loop through all itemIds
+         │  ├─ Filter: owner == 0x0 AND sold == false
+         │  └─ Return array of available items
+         │
+         └─ Result: [MarketItem{itemId:1, price:1ETH, ...}]
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                            PHASE 4: PURCHASE                               │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+Buyer (Bob)
+    │
+    └─ 5. Calls Marketplace.buyNFT(nftAddr, itemId=1) + 1ETH
+         │
+         ├─ Marketplace Contract Actions:
+         │  ├─ Load item data: price=1ETH, seller=alice
+         │  ├─ Validate: msg.value == 1ETH ✓
+         │  ├─ alice.transfer(1ETH)              // Seller payment
+         │  ├─ transferFrom(marketplace → bob, tokenId=1) // NFT transfer
+         │  ├─ Update state:
+         │  │  ├─ item.owner = bob
+         │  │  └─ item.sold = true
+         │  ├─ _itemsSold: 0 → 1
+         │  ├─ owner.transfer(0.025ETH)          // Platform fee
+         │  └─ emit MarketItemSold(...)
+         │
+         └─ Result: Bob owns NFT, Alice got 1ETH, Platform got 0.025ETH
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                             FINAL STATE                                    │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+NFT Contract State:
+├─ ownerOf(tokenId=1) = Bob
+├─ tokenURI(1) = "ipfs://QmHash123..."
+└─ getApproved(1) = marketplace (still approved)
+
+Marketplace State:
+├─ idToMarketItem[1].owner = Bob
+├─ idToMarketItem[1].sold = true
+├─ _itemIds.current() = 1
+└─ _itemsSold.current() = 1
+
+Balances:
+├─ Alice: +1 ETH (sale price)
+├─ Bob: -1 ETH, +NFT #1
+└─ Platform: +0.025 ETH (listing fee)
+```
+
+---
+
+## 💾 State Management Deep Dive
+
+### 📊 Data Flow Between Contracts
+
+```
+┌─────────────────┐                    ┌─────────────────┐
+│   NFT Contract  │                    │ Marketplace     │
+│                 │                    │ Contract        │
+├─────────────────┤                    ├─────────────────┤
+│ _tokenIds: 1    │                    │ _itemIds: 1     │
+│                 │                    │ _itemsSold: 1   │
+│ Token Mapping:  │                    │                 │
+│ 1 → alice       │ ── transferFrom ──▶│ Item Mapping:   │
+│     ↓ listing   │                    │ 1 → {           │
+│ 1 → marketplace │                    │   seller: alice │
+│     ↓ sale      │                    │   owner: bob    │
+│ 1 → bob         │                    │   sold: true    │
+│                 │                    │ }               │
+│ URI Mapping:    │                    │                 │
+│ 1 → "ipfs://..."│                    │ Platform Fee:   │
+│                 │                    │ 0.025 ETH       │
+└─────────────────┘                    └─────────────────┘
+```
+
+### 🔄 State Transitions
+
+#### NFT Ownership States:
+```
+[CREATION] → [LISTED] → [SOLD]
+     │            │         │
+     ▼            ▼         ▼
+  Creator  → Marketplace → Buyer
+   (mint)     (escrow)   (transfer)
+```
+
+#### Marketplace Item States:
+```
+NOT_EXIST → LISTED → SOLD
+    │         │       │
+    ▼         ▼       ▼
+  empty → {owner:0x0, → {owner:buyer,
+          sold:false}    sold:true}
+```
+
+---
+
+## 🛡️ Security Analysis
+
+### ✅ Security Measures Implemented
+
+#### 1. Reentrancy Protection
 ```solidity
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-```
-**Tại sao cần ReentrancyGuard:**
-- Ngăn chặn reentrancy attacks trong payment flows
-- Đặc biệt quan trọng cho functions có external calls và value transfers
 
-#### State Variables
-```solidity
-Counters.Counter private _itemIds;
-Counters.Counter private _itemsSold;
-address payable owner;
-uint256 listingPrice = 0.025 ether;
+function buyNFT(...) public payable nonReentrant {
+    // ✅ Protected against reentrancy attacks
+    seller.transfer(msg.value);
+}
 ```
 
-**Business logic:**
-- `_itemIds`: Track tổng số items đã list
-- `_itemsSold`: Track số items đã bán (để tính unsold items)
-- `listingPrice`: Phí platform cố định 0.025 ETH
+**Why needed:**
+- External calls to `transfer()` could trigger callback
+- Callback could re-enter and drain contract
+- `nonReentrant` prevents this attack
 
-#### MarketItem Struct
+#### 2. Input Validation
 ```solidity
+require(price > 0, "Price must be at least 1 wei");
+require(msg.value == listingPrice, "Price must equal listing price");
+require(msg.value == price, "Please submit the asking price");
+```
+
+**Protects against:**
+- Zero-price attacks
+- Incorrect payment amounts
+- Economic griefing
+
+#### 3. Safe Token Handling
+```solidity
+// ✅ Uses standard ERC721 interface
+IERC721(nftContract).transferFrom(from, to, tokenId);
+
+// ✅ Checks ownership implicitly
+// transferFrom will revert if sender doesn't own token
+```
+
+### ⚠️ Potential Security Concerns
+
+#### 1. Centralization Risks
+```solidity
+address payable owner;  // Single point of failure
+uint256 listingPrice = 0.025 ether;  // Fixed by owner
+```
+
+**Issues:**
+- Owner can change fees unilaterally
+- No governance mechanism
+- Single private key controls platform
+
+#### 2. Auto-Approval Risk
+```solidity
+setApprovalForAll(contractAddress, true);  // In NFT.createToken()
+```
+
+**Risk scenario:**
+1. Marketplace contract gets compromised
+2. Attacker can transfer ALL user NFTs
+3. Users lose entire collection
+
+**Mitigation ideas:**
+- Per-token approval instead of blanket approval
+- Time-limited approvals
+- Approval revocation functions
+
+#### 3. Price Manipulation
+```solidity
+function updateListingPrice(uint _listingPrice) public payable {
+    require(owner == msg.sender, "Only marketplace owner can update price");
+    listingPrice = _listingPrice;
+}
+```
+
+**Concerns:**
+- Owner can front-run users
+- No minimum/maximum limits
+- No advance notice for changes
+
+---
+
+## ⚡ Gas Optimization Analysis
+
+### 💰 Current Gas Costs (Estimated)
+
+| Function | Gas Cost | Breakdown |
+|----------|----------|-----------|
+| `createToken()` | ~200,000 | Mint(~50k) + SetURI(~30k) + Approval(~50k) |
+| `createMarketItem()` | ~150,000 | Storage(~20k) + Transfer(~50k) + Event(~5k) |
+| `buyNFT()` | ~300,000 | Transfer(~50k) + ETH sends(~42k) + Updates(~20k) |
+
+### 🔧 Optimization Strategies
+
+#### 1. Struct Packing
+```solidity
+// ❌ Current: ~7 storage slots
 struct MarketItem {
-    uint itemId;
-    address nftContract;
-    uint256 tokenId;
-    address payable seller;
-    address payable owner;
-    uint256 price;
-    bool sold;
+    uint itemId;              // 32 bytes - Slot 1
+    address nftContract;      // 20 bytes - Slot 2
+    uint256 tokenId;          // 32 bytes - Slot 3
+    address payable seller;   // 20 bytes - Slot 4
+    address payable owner;    // 20 bytes - Slot 5
+    uint256 price;            // 32 bytes - Slot 6
+    bool sold;                // 1 byte  - Slot 7
+}
+
+// ✅ Optimized: ~4 storage slots
+struct MarketItem {
+    uint128 itemId;           // 16 bytes \
+    uint128 price;            // 16 bytes  } Slot 1
+    address nftContract;      // 20 bytes \
+    uint96 tokenId;           // 12 bytes  } Slot 2  
+    address seller;           // 20 bytes \
+    address owner;            // 20 bytes  } Slot 3
+    bool sold;                // 1 byte   \
+    // 11 bytes free           //           } Slot 4
 }
 ```
 
-**Design patterns:**
-- `owner = address(0)` khi item đang được list
-- `owner = buyer_address` khi item đã sold
-- `sold` boolean để double-check trạng thái
+**Savings:** ~60,000 gas per item creation/update
 
-#### Key Functions Analysis
-
-**createMarketItem()**
+#### 2. Batch Operations
 ```solidity
-function createMarketItem(
-    address nftContract,
-    uint256 tokenId,
-    uint256 price
-) public payable nonReentrant {
-    require(price > 0, "Price must be at least 1 wei");
-    require(msg.value == listingPrice, "Price must be equal to listing price");
-    
-    _itemIds.increment();
-    uint256 itemId = _itemIds.current();
-    
-    idToMarketItem[itemId] = MarketItem(
-        itemId,
-        nftContract,
-        tokenId,
-        payable(msg.sender),
-        payable(address(0)),
-        price,
-        false
-    );
-    
-    IERC721(nftContract).transferFrom(msg.sender, address(this), tokenId);
-    
-    emit MarketItemCreated(itemId, nftContract, tokenId, msg.sender, address(0), price, false);
+// ✅ Add batch listing function
+function createMarketItems(
+    address[] nftContracts,
+    uint256[] tokenIds,
+    uint256[] prices
+) external payable {
+    require(msg.value == listingPrice * tokenIds.length);
+    // Batch process multiple items
 }
 ```
 
-**Critical points:**
-1. **Payment validation**: Exact listing fee required
-2. **Escrow pattern**: Marketplace holds NFT until sale
-3. **Event emission**: Cho off-chain indexing
-4. **State management**: owner = address(0) cho unsold items
-
-**createMarketSale()**
+#### 3. Lazy Deletion
 ```solidity
-function createMarketSale(
-    address nftContract,
-    uint256 itemId
-) public payable nonReentrant {
-    uint price = idToMarketItem[itemId].price;
-    uint tokenId = idToMarketItem[itemId].tokenId;
-    require(msg.value == price, "Please submit the asking price");
-    
-    idToMarketItem[itemId].seller.transfer(msg.value);
-    IERC721(nftContract).transferFrom(address(this), msg.sender, tokenId);
-    idToMarketItem[itemId].owner = payable(msg.sender);
-    idToMarketItem[itemId].sold = true;
-    _itemsSold.increment();
-    payable(owner).transfer(listingPrice);
-}
+// Instead of deleting struct, mark as inactive
+idToMarketItem[itemId].sold = true;  // Current approach ✅
+// vs
+delete idToMarketItem[itemId];       // More expensive ❌
 ```
 
-**Payment flow:**
-1. Buyer pays exact price
-2. Seller receives full sale price
-3. NFT transfers to buyer
-4. Platform owner receives listing fee
-5. State updates (owner, sold status)
+---
 
-## Flow Diagram chi tiết
+## 🧪 Testing Strategy
 
-### Complete User Journey
+### 📋 Test Cases Required
 
-```
-┌─────────────┐
-│   Creator   │ (NFT Artist/Creator)
-│   (Alice)   │
-└──────┬──────┘
-       │
-       ▼
-┌─────────────────────────────────────────────────┐
-│ BƯỚC 1: TẠO NFT                                 │
-│ ┌─────────────────────────────────────────────┐ │
-│ │ NFT.createToken(tokenURI)                   │ │
-│ │ ├─ _tokenIds.increment() // 0 → 1           │ │
-│ │ ├─ _mint(alice, tokenId=1)                  │ │
-│ │ ├─ _setTokenURI(1, "ipfs://...")            │ │
-│ │ └─ setApprovalForAll(marketplace, true)     │ │
-│ └─────────────────────────────────────────────┘ │
-│ Result: Alice owns NFT #1, Marketplace approved │
-└─────────────────────────────────────────────────┘
-       │
-       ▼
-┌─────────────────────────────────────────────────┐
-│ BƯỚC 2: LIST NFT LÊN MARKETPLACE                │
-│ ┌─────────────────────────────────────────────┐ │
-│ │ NFTMarketplace.createMarketItem(            │ │
-│ │   nftContract,                              │ │
-│ │   tokenId=1,                                │ │
-│ │   price=1 ETH                               │ │
-│ │ ) + 0.025 ETH listing fee                   │ │
-│ │ ├─ _itemIds.increment() // 0 → 1            │ │
-│ │ ├─ Create MarketItem struct                 │ │
-│ │ ├─ transferFrom(alice → marketplace)        │ │
-│ │ └─ emit MarketItemCreated()                 │ │
-│ └─────────────────────────────────────────────┘ │
-│ Result: Marketplace holds NFT, Item listed      │
-└─────────────────────────────────────────────────┘
-       │
-       ▼
-┌─────────────┐
-│   Buyer     │ (NFT Collector)
-│   (Bob)     │
-└──────┬──────┘
-       │
-       ▼
-┌─────────────────────────────────────────────────┐
-│ BƯỚC 3: BROWSE & DISCOVER                       │
-│ ┌─────────────────────────────────────────────┐ │
-│ │ NFTMarketplace.fetchMarketItems()           │ │
-│ │ └─ Returns: [MarketItem{                    │ │
-│ │      itemId: 1,                             │ │
-│ │      price: 1 ETH,                          │ │
-│ │      owner: address(0), // Chưa bán         │ │
-│ │      sold: false                            │ │
-│ │    }]                                       │ │
-│ └─────────────────────────────────────────────┘ │
-└─────────────────────────────────────────────────┘
-       │
-       ▼
-┌─────────────────────────────────────────────────┐
-│ BƯỚC 4: MUA NFT                                 │
-│ ┌─────────────────────────────────────────────┐ │
-│ │ NFTMarketplace.createMarketSale(            │ │
-│ │   nftContract,                              │ │
-│ │   itemId=1                                  │ │
-│ │ ) + 1 ETH purchase price                    │ │
-│ │ ├─ alice.transfer(1 ETH) // Payment         │ │
-│ │ ├─ transferFrom(marketplace → bob)          │ │
-│ │ ├─ Update: owner=bob, sold=true             │ │
-│ │ ├─ _itemsSold.increment() // 0 → 1          │ │
-│ │ └─ owner.transfer(0.025 ETH) // Platform    │ │
-│ └─────────────────────────────────────────────┘ │
-│ Result: Bob owns NFT, Alice gets paid           │
-└─────────────────────────────────────────────────┘
-```
-
-### Contract Interaction Sequence
-
-```
-Timeline: Creator → Marketplace → NFT Contract → Buyer
-
-┌─────────┐    ┌─────────────┐    ┌─────────────┐    ┌─────────┐
-│ Creator │    │ Marketplace │    │ NFT Contract│    │  Buyer  │
-└────┬────┘    └──────┬──────┘    └──────┬──────┘    └────┬────┘
-     │                │                  │                │
-     │ 1. createToken("ipfs://metadata") │                │
-     │ ─────────────────────────────────▶│                │
-     │                │          ┌───────┴─────────┐      │
-     │                │          │ • increment ID  │      │
-     │                │          │ • mint to creator│     │
-     │                │          │ • set tokenURI   │     │
-     │                │          │ • approve all    │     │
-     │                │          └───────┬─────────┘      │
-     │ ◀─────────────────────────────────│ return tokenId │
-     │                │                  │                │
-     │ 2. createMarketItem(nftAddr, 1, 1ETH) + 0.025ETH   │
-     │ ─────────────▶  │                  │                │
-     │                │ 3. transferFrom(creator, marketplace, 1)
-     │                │ ─────────────────▶│                │
-     │                │ ◀─────────────────│ NFT escrowed   │
-     │                │                  │                │
-     │                │ 4. fetchMarketItems()              │
-     │                │ ◀──────────────────────────────────│
-     │                │ ─────────────────────────────────▶ │
-     │                │          [Available Items]         │
-     │                │                  │                │
-     │                │ 5. createMarketSale(nftAddr, 1) + 1ETH
-     │                │ ◀──────────────────────────────────│
-     │ ◀──────────────│ Payment: 1 ETH   │                │
-     │   💰 Received  │                  │                │
-     │                │ 6. transferFrom(marketplace, buyer, 1)
-     │                │ ─────────────────▶│                │
-     │                │                  │ ──────────────▶│
-     │                │                  │    🖼️ NFT       │
-     │                │                  │                │
-     └────────────────┼──────────────────┴────────────────┘
-                      │ 💰 Platform fee: 0.025 ETH
-                      ▼
-            ┌─────────────────┐
-            │ Platform Owner  │
-            │   (Marketplace) │
-            └─────────────────┘
-```
-
-## State Management & Data Flow
-
-### NFT Contract State Changes
-```
-_tokenIds Counter:
-Initial: 0
-After createToken(): 1, 2, 3, ...
-
-Token Ownership:
-Initial: N/A
-After mint: Creator owns token
-After listing: Marketplace holds token (via transferFrom)
-After sale: Buyer owns token
-
-Approval Status:
-setApprovalForAll(marketplace, true) → Marketplace can transfer all tokens
-```
-
-### Marketplace Contract State Changes
-```
-_itemIds Counter:
-Initial: 0
-After each listing: 1, 2, 3, ...
-
-_itemsSold Counter:
-Initial: 0
-After each sale: 1, 2, 3, ...
-
-MarketItem State Transitions:
-┌─────────────┐  createMarketItem  ┌─────────────┐  createMarketSale  ┌─────────────┐
-│   INITIAL   │ ─────────────────▶ │   LISTED    │ ─────────────────▶ │    SOLD     │
-│             │                    │             │                    │             │
-│ • Not exist │                    │ • owner: 0x0│                    │ • owner: buyer
-│             │                    │ • sold: false│                   │ • sold: true
-│             │                    │ • In escrow  │                    │ • Transferred
-└─────────────┘                    └─────────────┘                    └─────────────┘
-```
-
-## Security Analysis
-
-### Vulnerabilities đã được handle
-
-1. **Reentrancy Attacks**
-   ```solidity
-   // ✅ Protected by nonReentrant modifier
-   function createMarketSale(...) public payable nonReentrant {
-       // Safe từ reentrancy attacks
-   }
-   ```
-
-2. **Integer Overflow/Underflow**
-   ```solidity
-   // ✅ Sử dụng OpenZeppelin Counters
-   using Counters for Counters.Counter;
-   ```
-
-3. **Access Control**
-   ```solidity
-   // ✅ Proper ownership checks
-   require(msg.value == price, "Exact payment required");
-   ```
-
-### Potential Security Concerns
-
-1. **Centralization Risk**
-   - Platform owner có thể thay đổi listing price
-   - Không có governance mechanism
-
-2. **NFT Contract Trust**
-   - Auto-approval cho marketplace có thể risky
-   - Nếu marketplace bị compromise, tất cả NFT có thể bị steal
-
-3. **Price Manipulation**
-   - Listing price cố định, không linh hoạt
-   - Không có minimum/maximum price validation
-
-## Gas Optimization Analysis
-
-### Efficient Patterns Used
-
-1. **Storage vs Memory**
-   ```solidity
-   // ✅ Sử dụng storage reference khi cần
-   MarketItem storage currentItem = idToMarketItem[currentId];
-   ```
-
-2. **Counter Management**
-   ```solidity
-   // ✅ Separate counters cho different metrics
-   Counters.Counter private _itemIds;      // Total items listed
-   Counters.Counter private _itemsSold;    // Items sold
-   ```
-
-3. **Batch Operations**
-   ```solidity
-   // ✅ Return arrays thay vì multiple calls
-   function fetchMarketItems() public view returns (MarketItem[] memory)
-   ```
-
-### Optimization Opportunities
-
-1. **Pack Struct Variables**
-   ```solidity
-   // Current: ~7 storage slots
-   struct MarketItem {
-       uint itemId;        // 32 bytes
-       address nftContract; // 20 bytes
-       uint256 tokenId;    // 32 bytes
-       address payable seller; // 20 bytes
-       address payable owner;  // 20 bytes
-       uint256 price;      // 32 bytes
-       bool sold;          // 1 byte
-   }
-   
-   // Optimized: ~5 storage slots
-   struct MarketItem {
-       uint128 itemId;     // 16 bytes
-       uint128 price;      // 16 bytes  } Slot 1
-       address nftContract; // 20 bytes
-       uint96 tokenId;     // 12 bytes  } Slot 2
-       address seller;     // 20 bytes
-       address owner;      // 20 bytes  } Slot 3
-       bool sold;          // 1 byte    } Slot 4 (có thể pack thêm)
-   }
-   ```
-
-2. **Reduce External Calls**
-   ```solidity
-   // Thay vì multiple transferFrom calls
-   // Có thể batch operations
-   ```
-
-## Deployment Strategy
-
-### Constructor Parameters
-```solidity
-// 1. Deploy NFTMarketplace first
-NFTMarketplace marketplace = new NFTMarketplace();
-
-// 2. Deploy NFT với marketplace address
-NFT nft = new NFT(address(marketplace));
-```
-
-### Environment Variables Required
-```
-MARKETPLACE_OWNER_ADDRESS=0x...
-LISTING_PRICE_ETH=0.025
-NFT_NAME="Metaverse"
-NFT_SYMBOL="MTVS"
-```
-
-## Usage Examples
-
-### Tạo và bán NFT
+#### NFT Contract Tests
 ```javascript
-// 1. Mint NFT
+describe("NFT Contract", () => {
+    it("Should mint token with correct ID", async () => {
+        const tokenURI = "ipfs://test";
+        const tx = await nft.createToken(tokenURI);
+        const receipt = await tx.wait();
+        
+        expect(await nft.tokenURI(1)).to.equal(tokenURI);
+        expect(await nft.ownerOf(1)).to.equal(creator.address);
+    });
+    
+    it("Should auto-approve marketplace", async () => {
+        await nft.createToken("ipfs://test");
+        expect(await nft.isApprovedForAll(creator.address, marketplace.address))
+            .to.be.true;
+    });
+});
+```
+
+#### Marketplace Contract Tests
+```javascript
+describe("Marketplace Contract", () => {
+    it("Should create market item with correct escrow", async () => {
+        // Setup: mint NFT first
+        await nft.createToken("ipfs://test");
+        
+        // Test: list item
+        const price = ethers.utils.parseEther("1");
+        const listingPrice = await marketplace.getListingPrice();
+        
+        await marketplace.createMarketItem(nft.address, 1, price, {
+            value: listingPrice
+        });
+        
+        // Verify: NFT in escrow
+        expect(await nft.ownerOf(1)).to.equal(marketplace.address);
+        
+        // Verify: market item created
+        const item = await marketplace.idToMarketItem(1);
+        expect(item.price).to.equal(price);
+        expect(item.sold).to.be.false;
+    });
+    
+    it("Should complete sale with correct payment distribution", async () => {
+        // Setup: create and list NFT
+        await setupNFTListing();
+        
+        // Test: buy NFT
+        const price = ethers.utils.parseEther("1");
+        const buyerBalanceBefore = await buyer.getBalance();
+        const sellerBalanceBefore = await seller.getBalance();
+        
+        await marketplace.connect(buyer).buyNFT(nft.address, 1, {
+            value: price
+        });
+        
+        // Verify: ownership transfer
+        expect(await nft.ownerOf(1)).to.equal(buyer.address);
+        
+        // Verify: payment distribution
+        const sellerBalanceAfter = await seller.getBalance();
+        expect(sellerBalanceAfter.sub(sellerBalanceBefore)).to.equal(price);
+    });
+});
+```
+
+#### Security Tests
+```javascript
+describe("Security Tests", () => {
+    it("Should prevent reentrancy attacks", async () => {
+        // Deploy malicious contract that tries to re-enter
+        const MaliciousContract = await ethers.getContractFactory("ReentrancyAttacker");
+        const attacker = await MaliciousContract.deploy(marketplace.address);
+        
+        // Test should revert
+        await expect(
+            attacker.attack()
+        ).to.be.revertedWith("ReentrancyGuard: reentrant call");
+    });
+    
+    it("Should validate exact payment amounts", async () => {
+        await setupNFTListing();
+        const price = ethers.utils.parseEther("1");
+        const wrongPrice = ethers.utils.parseEther("0.5");
+        
+        await expect(
+            marketplace.buyNFT(nft.address, 1, { value: wrongPrice })
+        ).to.be.revertedWith("Please submit the asking price");
+    });
+});
+```
+
+---
+
+## 🚀 Deployment Guide
+
+### 📋 Deployment Sequence
+
+```bash
+# 1. Compile contracts
+npx hardhat compile
+
+# 2. Deploy to local network
+npx hardhat run scripts/deploy.js --network localhost
+
+# 3. Verify deployment
+npx hardhat verify --network localhost <CONTRACT_ADDRESS>
+```
+
+### 📄 Deploy Script Analysis
+```javascript
+// scripts/deploy.js
+async function main() {
+    // Deploy Marketplace first
+    const NFTMarketplace = await ethers.getContractFactory("NFTMarketplace");
+    const nftMarketplace = await NFTMarketplace.deploy();
+    await nftMarketplace.deployed();
+    
+    console.log("nftMarketplace deployed to:", nftMarketplace.address);
+    
+    // Deploy NFT with marketplace address
+    const NFT = await ethers.getContractFactory("NFT");
+    const nft = await NFT.deploy(nftMarketplace.address);
+    await nft.deployed();
+    
+    console.log("nft deployed to:", nft.address);
+    
+    // Update frontend config
+    updateConfig(nft.address, nftMarketplace.address);
+}
+```
+
+**Critical Points:**
+1. **Order matters**: Marketplace phải deploy trước
+2. **Address dependency**: NFT constructor cần marketplace address
+3. **Config update**: Frontend cần addresses để interact
+
+---
+
+## 📖 Usage Examples
+
+### 🎨 Creating and Selling NFT
+```javascript
+// Step 1: Create NFT
 const tokenURI = "ipfs://QmYourMetadataHash";
-const tx1 = await nftContract.createToken(tokenURI);
-const receipt1 = await tx1.wait();
-const tokenId = receipt1.events[0].args.tokenId;
+const createTx = await nftContract.createToken(tokenURI);
+const createReceipt = await createTx.wait();
 
-// 2. List for sale
-const listingPrice = await marketplaceContract.getListingPrice();
+// Extract token ID from event
+const event = createReceipt.events?.find(e => e.event === 'Transfer');
+const tokenId = event?.args?.tokenId;
+
+// Step 2: List NFT for sale
 const price = ethers.utils.parseEther("1.0"); // 1 ETH
+const listingPrice = await marketplaceContract.getListingPrice();
 
-const tx2 = await marketplaceContract.createMarketItem(
+const listTx = await marketplaceContract.createMarketItem(
     nftContract.address,
     tokenId,
     price,
     { value: listingPrice }
 );
+await listTx.wait();
 
-// 3. Buy NFT (from different account)
-const tx3 = await marketplaceContract.connect(buyer).createMarketSale(
-    nftContract.address,
-    1, // itemId
-    { value: price }
-);
+console.log(`NFT ${tokenId} listed for ${ethers.utils.formatEther(price)} ETH`);
 ```
 
-### Query Functions
+### 💳 Buying NFT
 ```javascript
-// Lấy tất cả items đang bán
+// Step 1: Get market items
 const marketItems = await marketplaceContract.fetchMarketItems();
+const targetItem = marketItems[0]; // Buy first available item
 
-// Lấy NFT của user
+// Step 2: Execute purchase
+const buyTx = await marketplaceContract.connect(buyer).buyNFT(
+    targetItem.nftContract,
+    targetItem.itemId,
+    { value: targetItem.price }
+);
+await buyTx.wait();
+
+// Step 3: Verify ownership
+const newOwner = await nftContract.ownerOf(targetItem.tokenId);
+console.log(`NFT now owned by: ${newOwner}`);
+```
+
+### 📊 Querying Data
+```javascript
+// Get all market items
+const allItems = await marketplaceContract.fetchMarketItems();
+
+// Get user's owned NFTs
 const myNFTs = await marketplaceContract.fetchMyNFTs();
 
-// Lấy items đã tạo
+// Get user's created items
 const createdItems = await marketplaceContract.fetchItemsCreated();
+
+// Get individual item details
+const item = await marketplaceContract.idToMarketItem(itemId);
 ```
 
-## Testing Strategy
+---
 
-### Unit Tests cần cover
-1. **NFT Contract**
-   - Token creation và metadata
-   - Approval mechanism
-   - Token ID increment
+## 🔧 Troubleshooting
 
-2. **Marketplace Contract**
-   - Listing với correct payment
-   - Sale transaction flow
-   - State updates
-   - Query functions accuracy
+### ❌ Common Errors
 
-3. **Integration Tests**
-   - End-to-end user journey
-   - Contract interaction
-   - Event emissions
+#### 1. "ERC721: transfer caller is not owner nor approved"
+```
+Cause: NFT not properly approved for marketplace
+Solution: Ensure setApprovalForAll() was called
+```
 
-4. **Security Tests**
-   - Reentrancy protection
-   - Payment validation
-   - Access control
+#### 2. "Please submit the asking price"
+```
+Cause: Incorrect ETH amount sent with buyNFT()
+Solution: Send exact item.price amount
+```
 
-## Kết luận
+#### 3. "Price must be equal to listing price"
+```
+Cause: Incorrect listing fee for createMarketItem()
+Solution: Send exact getListingPrice() amount
+```
 
-Hệ thống NFT Marketplace này cung cấp một foundation solid cho việc trade NFT với:
+### 🛠️ Debug Commands
+```javascript
+// Check NFT approval status
+await nft.isApprovedForAll(owner, marketplace.address);
 
-**Ưu điểm:**
-- Architecture rõ ràng và modular
-- Security best practices với ReentrancyGuard
-- Comprehensive query functions
-- Event-driven design cho off-chain integration
+// Check current listing price
+await marketplace.getListingPrice();
 
-**Cải thiện có thể:**
-- Thêm access control cho admin functions
-- Implement royalty system cho creators
-- Add auction mechanism
-- Optimize gas với struct packing
-- Add governance cho platform parameters
+// Check item details
+await marketplace.idToMarketItem(itemId);
 
-Đây là một implementation tốt cho MVP của NFT marketplace, có thể được extend với nhiều features advanced hơn. 
+// Check NFT owner
+await nft.ownerOf(tokenId);
+```
 
-1. Mở terminal, chạy node Hardhat local:
-   npx hardhat node
+---
 
-2. Mở terminal khác, deploy contracts:
-   npx hardhat run scripts/deploy.js --network localhost 
+## 📈 Future Improvements
+
+### 🚀 Enhanced Features
+1. **Auction System**: Time-based bidding mechanism
+2. **Royalties**: Automatic creator royalty payments
+3. **Batch Operations**: Multiple NFT operations in single tx
+4. **Governance**: Community voting for platform parameters
+5. **Lazy Minting**: Mint only when purchased
+
+### 🔒 Security Enhancements
+1. **Multi-sig**: Require multiple signatures for admin functions
+2. **Timelock**: Delay critical parameter changes
+3. **Circuit Breaker**: Emergency pause functionality
+4. **Audit**: Professional security audit
+
+### ⚡ Gas Optimizations
+1. **EIP-1167**: Minimal proxy patterns for NFT contracts
+2. **Storage Packing**: Optimize struct layouts
+3. **Batch Functions**: Reduce individual transaction costs
+4. **Layer 2**: Deploy on Polygon/Arbitrum for lower fees
+
+---
+
+## 📚 Reference Links
+
+- [OpenZeppelin ERC721](https://docs.openzeppelin.com/contracts/4.x/erc721)
+- [Solidity Documentation](https://docs.soliditylang.org/)
+- [Hardhat Framework](https://hardhat.org/docs)
+- [Ethers.js Library](https://docs.ethers.io/)
+- [IPFS Documentation](https://docs.ipfs.io/)
+
+---
+
+**💡 Pro Tip**: Luôn test thoroughly trên local network trước khi deploy lên mainnet. Gas costs trên mainnet rất đắt! 
