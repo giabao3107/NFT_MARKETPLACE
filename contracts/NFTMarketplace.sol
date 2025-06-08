@@ -30,6 +30,7 @@ contract NFTMarketplace is ReentrancyGuard {
     mapping(uint256 => MarketItem) private idToMarketItem;
     mapping(address => uint256) private pendingWithdrawals;
 
+    // Optimized Events - Consolidated from multiple similar events
     event MarketItemCreated (
         uint indexed itemId,
         address indexed nftContract,
@@ -44,51 +45,19 @@ contract NFTMarketplace is ReentrancyGuard {
         uint indexed itemId,
         address indexed nftContract,
         uint256 indexed tokenId,
+        address buyer,
         address seller,
-        address owner,
-        uint256 price
+        uint256 price,
+        uint256 marketplaceFee,
+        uint256 sellerPayment
     );
 
-    event SellerPaid (
-        address indexed seller,
-        uint256 indexed itemId,
-        uint256 amount
-    );
-
-    event MarketplaceFeeCollected (
-        address indexed marketplace,
-        uint256 indexed itemId,
-        uint256 fee
-    );
-
-    event PaymentWithdrawn (
-        address indexed seller,
-        uint256 amount
-    );
-
-    event RevenueReceived (
-        address indexed seller,
-        uint256 amount,
-        string message
-    );
-
-    event SellerPaymentReceived (
-        address indexed seller,
-        uint256 amount
-    );
-
-    event NFTPurchaseCompleted (
-        address indexed buyer,
-        address indexed seller,
+    // Consolidated payment event - covers all payment scenarios
+    event PaymentProcessed (
+        address indexed recipient,
         uint256 indexed itemId,
         uint256 amount,
-        string nftName
-    );
-
-    event BuyerPurchaseRecorded (
-        address indexed buyer,
-        uint256 indexed itemId,
-        uint256 amount
+        string eventType // "SELLER_PAYMENT", "MARKETPLACE_FEE", "WITHDRAWAL", "CLAIM"
     );
 
     /* Returns the listing price of the contract */
@@ -126,7 +95,7 @@ contract NFTMarketplace is ReentrancyGuard {
         (bool success, ) = payable(msg.sender).call{value: amount}("");
         require(success, "Withdrawal failed");
         
-        emit PaymentWithdrawn(msg.sender, amount);
+        emit PaymentProcessed(msg.sender, 0, amount, "WITHDRAWAL");
     }
 
     /* Claim payment directly (shows + ETH in MetaMask Activity) */
@@ -140,7 +109,7 @@ contract NFTMarketplace is ReentrancyGuard {
         (bool success, ) = payable(msg.sender).call{value: amount}("");
         require(success, "Payment claim failed");
         
-        emit SellerPaymentReceived(msg.sender, amount);
+        emit PaymentProcessed(msg.sender, 0, amount, "CLAIM");
     }
 
     /* Claim revenue with custom message (shows "Received Revenue" in MetaMask) */
@@ -154,17 +123,7 @@ contract NFTMarketplace is ReentrancyGuard {
         (bool success, ) = payable(msg.sender).call{value: amount}("");
         require(success, "Revenue claim failed");
         
-        emit RevenueReceived(msg.sender, amount, "NFT Sale Revenue");
-    }
-
-    /* Direct payment to seller (shows + ETH in seller's MetaMask Activity) */
-    function receiveSellerPayment(address payable seller, uint256 amount) internal {
-        // This creates a transaction FROM the contract TO the seller
-        // Which will show as + ETH in seller's MetaMask Activity
-        (bool success, ) = seller.call{value: amount}("");
-        require(success, "Payment to seller failed");
-        
-        emit SellerPaymentReceived(seller, amount);
+        emit PaymentProcessed(msg.sender, 0, amount, "REVENUE_CLAIM");
     }
 
     /* Auto-claim revenue after purchase (immediate + ETH for seller) */
@@ -183,17 +142,7 @@ contract NFTMarketplace is ReentrancyGuard {
         (bool success, ) = payable(msg.sender).call{value: amount}("");
         require(success, "Withdrawal failed");
         
-        emit PaymentWithdrawn(msg.sender, amount);
-    }
-
-    /* Record purchase in buyer's MetaMask Activity (for historical tracking) */
-    function recordMyPurchase(uint256 itemId) public {
-        MarketItem memory item = idToMarketItem[itemId];
-        require(item.owner == msg.sender, "You don't own this NFT");
-        require(item.sold, "This item was never sold");
-        
-        // Emit event that will show in buyer's MetaMask Activity
-        emit BuyerPurchaseRecorded(msg.sender, itemId, item.price);
+        emit PaymentProcessed(msg.sender, 0, amount, "PARTIAL_WITHDRAWAL");
     }
 
     /* Places an item for sale on the marketplace */
@@ -264,38 +213,23 @@ contract NFTMarketplace is ReentrancyGuard {
         // Store payment for seller to withdraw/claim
         pendingWithdrawals[seller] += sellerPayment;
         
-        // Emit seller payment event
-        emit SellerPaid(seller, itemId, sellerPayment);
-        
         // Transfer marketplace fee to owner
         (bool ownerSuccess, ) = owner.call{value: marketplaceFee}("");
         require(ownerSuccess, "Transfer to marketplace owner failed");
         
-        // Emit marketplace fee event
-        emit MarketplaceFeeCollected(owner, itemId, marketplaceFee);
+        // Emit consolidated events
+        emit PaymentProcessed(seller, itemId, sellerPayment, "SELLER_PAYMENT");
+        emit PaymentProcessed(owner, itemId, marketplaceFee, "MARKETPLACE_FEE");
 
         emit MarketItemSold(
             itemId,
             nftContract,
             tokenId,
-            seller,
-            msg.sender,
-            price
-        );
-
-        // Emit additional events for MetaMask Activity tracking
-        emit NFTPurchaseCompleted(
             msg.sender,
             seller,
-            itemId,
             price,
-            "NFT Purchase"
-        );
-
-        emit BuyerPurchaseRecorded(
-            msg.sender,
-            itemId,
-            price
+            marketplaceFee,
+            sellerPayment
         );
     }
 

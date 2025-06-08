@@ -214,7 +214,7 @@ npm start
 ```
 Network Settings:
 ┌─────────────────┬──────────────────────────┐
-│ Network Name    │ Hardhat Local            │
+│ Network Name    │  Hardhat Local           │
 │ RPC URL         │ http://localhost:8545    │
 │ Chain ID        │ 1337                     │
 │ Currency Symbol │ ETH                      │
