@@ -29,6 +29,7 @@ contract NFT is ERC721URIStorage {
 
         _mint(msg.sender, newItemId);
         _setTokenURI(newItemId, tokenURI);
+        // TODO: Nếu đã approve marketplace ngoài UI, có thể xóa dòng dưới để tiết kiệm gas
         setApprovalForAll(contractAddress, true);
 
         // Emit single optimized event

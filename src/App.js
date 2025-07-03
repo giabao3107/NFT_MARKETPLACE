@@ -3,6 +3,8 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { ethers } from 'ethers';
+import { StagewiseToolbar } from '@stagewise/toolbar-react';
+import { ReactPlugin } from '@stagewise-plugins/react';
 
 import Header from './components/Header';
 import Home from './pages/Home';
@@ -204,6 +206,8 @@ function App() {
               <Route path="/purchase-history" element={<PurchaseHistory />} />
             </Routes>
           </main>
+          {/* Stagewise Toolbar: Only appears in development */}
+          <StagewiseToolbar config={{ plugins: [ReactPlugin] }} />
           <ToastContainer 
             position="top-right" 
             autoClose={3000}

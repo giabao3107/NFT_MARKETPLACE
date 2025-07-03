@@ -127,7 +127,7 @@ contract NFTMarketplace is ReentrancyGuard {
     }
 
     /* Auto-claim revenue after purchase (immediate + ETH for seller) */
-    function enableAutoClaim() public view returns (bool) {
+    function enableAutoClaim() public pure returns (bool) {
         // This could be a setting, for now return true
         return true;
     }
@@ -244,7 +244,7 @@ contract NFTMarketplace is ReentrancyGuard {
     /* Returns all unsold market items */
     function fetchMarketItems() public view returns (MarketItem[] memory) {
         uint itemCount = _itemIds.current();
-        uint unsoldItemCount = _itemIds.current() - _itemsSold.current();
+        uint unsoldItemCount = itemCount - _itemsSold.current();
         uint currentIndex = 0;
 
         MarketItem[] memory items = new MarketItem[](unsoldItemCount);

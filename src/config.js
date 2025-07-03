@@ -5,5 +5,5 @@ export const networkInfo = {
   name: "unknown",
   chainId: 1337,
   deployer: "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
-  deployedAt: "2025-06-08T05:39:23.508Z"
+  deployedAt: "2025-07-03T17:03:14.328Z"
 };
