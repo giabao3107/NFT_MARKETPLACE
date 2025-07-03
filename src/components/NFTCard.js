@@ -3,6 +3,7 @@ import { FaEthereum } from 'react-icons/fa';
 import MediaPreview from './MediaPreview';
 import { PlaceholderService } from '../utils/placeholderService';
 import './NFTCard.css';
+import { addNFTToMetaMask } from '../utils/metamaskHelpers';
 
 export default function NFTCard({ nft, onBuy, onView, showBuyButton }) {
   // Get fallback image with tokenId for consistency - only when absolutely needed
@@ -12,6 +13,29 @@ export default function NFTCard({ nft, onBuy, onView, showBuyButton }) {
 
   // Use the actual image if available, fallback only if truly needed
   const imageSource = nft.image || getFallbackImage();
+
+  const handlePurchase = async () => {
+    try {
+      setIsLoading(true);
+      const transaction = await marketplaceContract.createMarketSale(nftContract.address, item.tokenId, {
+        value: item.price
+      });
+      await transaction.wait();
+      
+      // Add NFT to MetaMask automatically after successful purchase
+      await addNFTToMetaMask(
+        nftContract.address,
+        item.tokenId.toString(),
+        item.tokenURI
+      );
+      
+      setIsLoading(false);
+      onPurchaseSuccess();
+    } catch (error) {
+      console.error('Error purchasing NFT:', error);
+      setIsLoading(false);
+    }
+  };
 
   return (
     <div className="nft-card" onClick={() => onView(nft)}>

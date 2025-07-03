@@ -12,6 +12,7 @@ import { TransactionUtils } from '../utils/transactionUtils';
 import LoadingSpinner from '../components/LoadingSpinner';
 import RichTextEditor from '../components/RichTextEditor';
 import './CreateItem.css';
+import { addNFTToMetaMask } from '../utils/metamaskHelpers';
 
 export default function CreateItem() {
   const [fileUrl, setFileUrl] = useState(null);
@@ -184,6 +185,18 @@ export default function CreateItem() {
       const event = tx.events[0];
       const tokenId = event.args[2].toNumber();
       
+      // Add NFT to MetaMask right after token creation
+      try {
+        await addNFTToMetaMask(
+          nftaddress,
+          tokenId.toString(),
+          metadataUrl
+        );
+        console.log('NFT added to MetaMask successfully');
+      } catch (error) {
+        console.error('Failed to add NFT to MetaMask:', error);
+      }
+
       // Add create token to activity history
       const tokenActivity = {
         type: 'CREATE_TOKEN',

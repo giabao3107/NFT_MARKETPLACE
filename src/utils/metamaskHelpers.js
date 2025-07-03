@@ -124,4 +124,56 @@ export const MetaMaskHelpers = {
       return null;
     }
   }
+};
+
+export const addNFTToMetaMask = async (tokenAddress, tokenId, tokenURI) => {
+  try {
+    const provider = window.ethereum;
+    
+    if (!provider) {
+      console.error('MetaMask not found!');
+      return false;
+    }
+
+    console.log('Adding NFT to MetaMask:', {
+      tokenAddress,
+      tokenId,
+      tokenURI
+    });
+
+    // Request to add the NFT to MetaMask
+    const wasAdded = await provider.request({
+      method: 'wallet_watchAsset',
+      params: {
+        type: 'ERC721',
+        options: {
+          address: tokenAddress,
+          tokenId: tokenId,
+          tokenURI: tokenURI
+        },
+      },
+    });
+
+    if (wasAdded) {
+      console.log('NFT was added to MetaMask successfully');
+      
+      // Store the NFT info in localStorage for reference
+      const nftKey = `nft_${tokenAddress}_${tokenId}`;
+      localStorage.setItem(nftKey, JSON.stringify({
+        address: tokenAddress,
+        tokenId: tokenId,
+        tokenURI: tokenURI,
+        addedToMetaMask: true,
+        timestamp: Date.now()
+      }));
+      
+      return true;
+    }
+    
+    console.log('User rejected adding NFT to MetaMask');
+    return false;
+  } catch (error) {
+    console.error('Error adding NFT to MetaMask:', error);
+    return false;
+  }
 }; 
