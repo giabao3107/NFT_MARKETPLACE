@@ -175,19 +175,6 @@
   transform: scale(1.05);
 }
 
-.nft-category {
-  position: absolute;
-  top: 1rem;
-  right: 1rem;
-  background: rgba(255, 107, 53, 0.9);
-  color: white;
-  padding: 0.5rem 1rem;
-  border-radius: 12px;
-  font-size: 0.8rem;
-  font-weight: 600;
-  backdrop-filter: blur(10px);
-}
-
 /* Content */
 .nft-content {
   padding: 1.5rem;
@@ -266,41 +253,6 @@
   font-size: 1.1rem;
 }
 
-/* Info Section */
-.info-section {
-  max-width: 800px;
-  margin: 0 auto;
-}
-
-.info-card {
-  display: flex;
-  gap: 1.5rem;
-  background: rgba(59, 130, 246, 0.1);
-  border: 1px solid rgba(59, 130, 246, 0.3);
-  border-radius: 16px;
-  padding: 2rem;
-  backdrop-filter: blur(10px);
-}
-
-.info-icon {
-  font-size: 2rem;
-  flex-shrink: 0;
-}
-
-.info-content h4 {
-  color: white;
-  font-size: 1.2rem;
-  font-weight: 600;
-  margin: 0 0 0.75rem 0;
-}
-
-.info-content p {
-  color: #94a3b8;
-  font-size: 1rem;
-  line-height: 1.6;
-  margin: 0;
-}
-
 /* Responsive Design */
 @media (max-width: 768px) {
   .purchase-history-container {
@@ -324,20 +276,6 @@
 
   .nft-image-container {
     height: 220px;
-  }
-
-  .info-card {
-    flex-direction: column;
-    gap: 1rem;
-    padding: 1.5rem;
-  }
-
-  .info-icon {
-    align-self: center;
-  }
-
-  .info-content {
-    text-align: center;
   }
 }
 

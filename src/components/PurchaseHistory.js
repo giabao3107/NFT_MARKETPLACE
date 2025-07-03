@@ -95,8 +95,6 @@ export default function PurchaseHistory() {
     }
   }
 
-
-
   if (!account) {
     return (
       <div className="purchase-history-container">
@@ -153,7 +151,6 @@ export default function PurchaseHistory() {
                     e.target.src = PlaceholderService.getErrorPlaceholder();
                   }}
                 />
-                <div className="nft-category">{nft.category}</div>
               </div>
               
               <div className="nft-content">
@@ -186,19 +183,6 @@ export default function PurchaseHistory() {
           ))}
         </div>
       )}
-
-      <div className="info-section">
-        <div className="info-card">
-          <div className="info-icon">🔄</div>
-          <div className="info-content">
-            <h4>Tracking tự động</h4>
-            <p>
-              Tất cả giao dịch mua NFT được tự động ghi nhận trong MetaMask Activity 
-              và lịch sử giao dịch để bạn dễ dàng theo dõi.
-            </p>
-          </div>
-        </div>
-      </div>
     </div>
   );
 } 
